@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>校園數位共創水族箱 (榮譽名牌版)</title>
+    <title>校園數位共創水族箱 (旗艦版)</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -29,6 +29,7 @@
             position: absolute; bottom: 0; width: 100%; height: 80px;
             background: #e6d99c; border-top: 5px solid #d4c585; 
             z-index: 2; pointer-events: none;
+            transition: opacity 0.5s;
         }
 
         /* --- 1. 頂部班級列表 --- */
@@ -67,10 +68,8 @@
         }
 
         #class-input-area {
-            background: rgba(0,0,0,0.7);
-            padding: 8px; border-radius: 8px;
-            display: flex; gap: 5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            background: rgba(0,0,0,0.7); padding: 8px; border-radius: 8px;
+            display: flex; gap: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
 
         #class-management-area {
@@ -78,10 +77,8 @@
         }
 
         #class-label-btn {
-            background: rgba(0, 123, 255, 0.9);
-            color: white; padding: 8px 15px; border-radius: 20px;
-            font-size: 16px; font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            background: rgba(0, 123, 255, 0.9); color: white; padding: 8px 15px; border-radius: 20px;
+            font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             cursor: pointer; display: flex; align-items: center; gap: 5px;
         }
 
@@ -90,10 +87,8 @@
         }
 
         #menu-toggle-btn {
-            background: rgba(255, 255, 255, 0.9);
-            border: none; border-radius: 50%; width: 40px; height: 40px;
-            font-size: 20px; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            background: rgba(255, 255, 255, 0.9); border: none; border-radius: 50%; width: 40px; height: 40px;
+            font-size: 20px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             display: flex; align-items: center; justify-content: center;
         }
 
@@ -122,7 +117,6 @@
         .btn-green { background: #28a745; }
         .btn-sm { padding: 4px 8px; font-size: 12px; }
 
-        /* 特效樣式 */
         .delete-mode-active { background: #dc3545 !important; animation: pulse-red 1s infinite; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
 
@@ -131,54 +125,25 @@
 
         input[type="file"] { display: none; }
 
-        /* ★★★ 新增：魚的容器與名牌樣式 ★★★ */
         .fish-container {
-            position: absolute;
-            z-index: 10;
-            display: flex;
-            flex-direction: column; /* 垂直排列：名牌在上，魚在下 */
-            align-items: center;    /* 水平居中 */
-            pointer-events: auto;   /* 允許點擊 */
-            transition: opacity 0.5s; /* 進場淡入 */
+            position: absolute; z-index: 10; display: flex; flex-direction: column; align-items: center; pointer-events: auto; transition: opacity 0.5s;
         }
-
-        /* 魚的圖片樣式 (移除原本的 position absolute) */
-        .fish-img {
-            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
-            transition: filter 0.2s; /* 這裡只負責濾鏡動畫 */
-            /* transform scaleX 的動畫由 JS 控制 */
-        }
-
-        /* 名牌樣式 */
+        .fish-img { filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3)); transition: filter 0.2s; }
         .fish-name-label {
-            color: white;
-            font-size: 13px; /* 合適的大小，清晰但不搶戲 */
-            font-weight: bold;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.9); /* 強烈陰影確保在深淺背景都清楚 */
-            margin-bottom: 4px; /* 與魚身的距離 */
-            white-space: nowrap; /* 不換行 */
-            padding: 2px 6px;
-            background: rgba(0,0,0,0.3); /* 半透明背景增加對比度 */
-            border-radius: 10px;
+            color: white; font-size: 13px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+            margin-bottom: 4px; white-space: nowrap; padding: 2px 6px; background: rgba(0,0,0,0.3); border-radius: 10px;
         }
-
-        /* 互動特效改為作用在圖片上 */
         .fish-container.deletable .fish-img:hover { filter: drop-shadow(0 0 10px red); transform: scale(1.1); }
         .fish-container.submittable .fish-img:hover { filter: drop-shadow(0 0 15px gold); transform: scale(1.2); }
-        /* 大廳問號游標 */
         .fish-container.has-author { cursor: help; }
-
 
         /* --- 裁剪與大小調整視窗 --- */
         #modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 200;
-            display: none; flex-direction: column;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; display: none; flex-direction: column;
         }
         #toolbar {
-            height: 140px; background: #333; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-            padding: 10px; color: white;
+            height: 160px; /* 加高工具列 */
+            background: #333; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 10px; color: white;
         }
         .toolbar-row { display: flex; gap: 15px; align-items: center; justify-content: center; width: 100%; }
 
@@ -186,25 +151,24 @@
         canvas { border: 2px solid #666; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         .radio-group { display: flex; gap: 10px; background: #555; padding: 5px 15px; border-radius: 20px; }
         .radio-group label { cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 14px; color: white;}
+        input[type=range] { width: 150px; accent-color: #007bff; }
         
-        input[type=range] { width: 120px; accent-color: #007bff; }
-
-        /* 預覽框 */
-        #size-preview-container {
-            width: 60px; height: 60px; border: 2px dashed #888;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(255,255,255,0.1); position: relative; overflow: hidden;
+        /* 真實預覽框 */
+        #real-preview-container { 
+            width: 80px; height: 80px; 
+            border: 2px dashed #888; 
+            display: flex; align-items: center; justify-content: center; 
+            background: rgba(255,255,255,0.1); 
+            overflow: visible; /* 讓圖片可以超出框框顯示真實大小 */
+            position: relative;
         }
-        #preview-fish-icon {
-            background-color: #ffeb3b; border: 2px solid #fff; border-radius: 50%;
-            transition: width 0.1s, height 0.1s; box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        #real-preview-img {
+            max-width: none; /* 允許真實大小 */
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+            transition: width 0.1s;
         }
-
-        #loading-msg {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: white; font-size: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            z-index: 5; pointer-events: none;
-        }
+        
+        #loading-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 5; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -217,7 +181,6 @@
         </div>
 
         <div id="top-nav">
-            
             <div id="class-input-area">
                 <input type="text" id="classInput" class="class-input" placeholder="輸入班號">
                 <button class="btn btn-blue" style="padding: 5px 10px;" onclick="switchClass()">進入/新增</button>
@@ -243,14 +206,13 @@
                 <div class="panel">
                     <h3>🛠️ 管理工具</h3>
                     <button id="submitModeBtn" class="btn btn-gold" onclick="toggleSubmitMode()">🏆 投稿優秀作品 (關)</button>
-                    
                     <button id="deleteModeBtn" class="btn btn-purple" onclick="toggleDeleteMode()">❌ 刪除單隻魚 (關)</button>
                     <button class="btn btn-red" onclick="clearAllFish()">🗑️ 清空魚缸(保留班級)</button>
                 </div>
 
                 <div class="panel">
                     <h3>🏫 場景設定</h3>
-                    <button class="btn btn-orange" onclick="document.getElementById('bgInput').click()">🖼️ 更換背景</button>
+                    <button class="btn btn-orange" onclick="document.getElementById('bgInput').click()">🖼️ 更換背景(裁剪)</button>
                     <input type="file" id="bgInput" accept="image/*" onchange="handleBgFile(this)">
                     <button class="btn btn-gray" onclick="resetBackground()">🌊 恢復深海</button>
                 </div>
@@ -264,37 +226,33 @@
 
     <div id="modal">
         <div id="toolbar">
-            <div class="toolbar-row">
+            <div class="toolbar-row" id="crop-mode-row">
                 <div class="radio-group">
                     <label><input type="radio" name="mode" value="rect" checked onclick="setMode('rect')"> 🟦 方形</label>
                     <label><input type="radio" name="mode" value="poly" onclick="setMode('poly')"> ✂️ 描邊</label>
                 </div>
             </div>
             
-            <div class="toolbar-row" style="background:#444; padding:5px; border-radius:10px;">
+            <div class="toolbar-row" id="size-preview-row" style="background:#444; padding:5px; border-radius:10px;">
                 <span style="font-size:12px;">大小:</span>
                 <input type="range" id="sizeSlider" min="30" max="250" value="100" oninput="updateSizePreview(this.value)">
-                <div id="size-preview-container">
-                    <div id="preview-fish-icon"></div>
+                
+                <div id="real-preview-container" title="這是放入水族箱後的真實大小">
+                    <img id="real-preview-img" src="" alt="preview">
                 </div>
             </div>
 
             <div class="toolbar-row">
-                <button class="btn btn-green" id="finishBtn" onclick="finishCrop()">上傳雲端</button>
+                <button class="btn btn-green" id="finishBtn" onclick="finishCrop()">確定上傳</button>
                 <button class="btn btn-red" onclick="resetCrop()">重置</button>
                 <button class="btn btn-gray" onclick="closeModal()">取消</button>
             </div>
         </div>
-        <div id="canvas-wrapper">
-            <canvas id="editor"></canvas>
-        </div>
+        <div id="canvas-wrapper"><canvas id="editor"></canvas></div>
         <div style="text-align:center; color:#aaa; padding:8px; font-size:14px;" id="instruction">拖曳畫出方框</div>
     </div>
 
     <script>
-        // ==========================================
-        // Firebase 設定
-        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyAUoYIt2CdivHIoLK-ZjsucejJkuzzQRnA",
             authDomain: "fish321-36ce2.firebaseapp.com",
@@ -306,31 +264,23 @@
             measurementId: "G-4QESL7JL49"
         };
 
-        let dbRef = null;
-        let rootRef = null; 
-        let currentClassId = "Lobby"; 
+        let dbRef = null; let rootRef = null; let bgRef = null; let currentClassId = "Lobby"; 
+        let isDeleteMode = false; let isSubmitMode = false; let isControlsVisible = true;
         
-        let isDeleteMode = false;
-        let isSubmitMode = false;
-        let isControlsVisible = true;
+        // 狀態變數：區分目前是在上傳魚還是上傳背景
+        let currentUploadType = 'fish'; // 'fish' or 'bg'
 
         try {
             firebase.initializeApp(firebaseConfig);
             rootRef = firebase.database().ref('school_aquarium_fish');
             listenToClassList();
             initClassRoom("Lobby");
-        } catch (e) {
-            console.error(e);
-        }
+        } catch (e) { console.error(e); }
 
-        // ==========================================
-        //  自動生成班級列表
-        // ==========================================
         function listenToClassList() {
             rootRef.on('value', (snapshot) => {
                 const listContainer = document.getElementById('dynamic-class-list');
                 listContainer.innerHTML = ""; 
-                
                 snapshot.forEach((childSnapshot) => {
                     const className = childSnapshot.key;
                     if (className !== "Lobby") {
@@ -348,22 +298,16 @@
             });
         }
 
-        // ==========================================
-        //  班級管理邏輯
-        // ==========================================
         function switchClass() {
             let inputVal = document.getElementById('classInput').value.trim();
             if(!inputVal) return alert("請輸入班級名稱！");
             if(inputVal === "Lobby") return initClassRoom("Lobby");
-            
             const safeClassId = inputVal.replace(/[.#$/[\]]/g, "_");
             initClassRoom(safeClassId);
-            
             document.getElementById('class-input-area').style.display = 'none';
             document.getElementById('class-management-area').style.display = 'flex';
             document.getElementById('current-class-text').innerText = `📍 ${safeClassId} 班`;
             document.getElementById('classInput').value = '';
-            
             updateClassHighlight(safeClassId);
         }
 
@@ -371,28 +315,18 @@
             document.getElementById('class-management-area').style.display = 'none';
             document.getElementById('class-input-area').style.display = 'flex';
         }
-
         function updateClassHighlight(className) {
              document.querySelectorAll('.class-tag').forEach(t => t.classList.remove('active'));
-             Array.from(document.querySelectorAll('.class-tag')).forEach(t => {
-                 if(t.innerText === className) t.classList.add('active');
-             });
+             Array.from(document.querySelectorAll('.class-tag')).forEach(t => { if(t.innerText === className) t.classList.add('active'); });
         }
-
         function deleteCurrentClass() {
             if(currentClassId === "Lobby") return alert("大廳不能刪除！");
-            let confirmDel = confirm(`⚠️ 警告！\n\n您即將刪除【${currentClassId}】整個班級。\n確定嗎？`);
-            if(confirmDel) {
-                firebase.database().ref('school_aquarium_fish/' + currentClassId).remove()
-                .then(() => {
-                    alert("班級已刪除，返回大廳。");
-                    initClassRoom("Lobby");
-                    showClassInput();
-                })
-                .catch(err => alert("刪除失敗：" + err));
+            if(confirm(`⚠️ 警告！\n\n您即將刪除【${currentClassId}】整個班級。\n確定嗎？`)) {
+                firebase.database().ref('school_aquarium_fish/' + currentClassId).remove();
+                firebase.database().ref('school_aquarium_bg/' + currentClassId).remove()
+                .then(() => { alert("班級已刪除，返回大廳。"); initClassRoom("Lobby"); showClassInput(); });
             }
         }
-
         function renameCurrentClass() {
             if(currentClassId === "Lobby") return alert("大廳不能改名！");
             let newName = prompt(`請輸入【${currentClassId}】的新名稱：`, currentClassId);
@@ -400,188 +334,146 @@
                 let safeNewName = newName.replace(/[.#$/[\]]/g, "_");
                 dbRef.once('value').then(snapshot => {
                     let data = snapshot.val();
-                    firebase.database().ref('school_aquarium_fish/' + safeNewName).set(data)
-                    .then(() => {
-                        dbRef.remove();
-                        alert(`改名成功！已切換至 ${safeNewName}`);
-                        document.getElementById('classInput').value = safeNewName;
-                        switchClass();
-                    });
+                    firebase.database().ref('school_aquarium_fish/' + safeNewName).set(data).then(() => { dbRef.remove(); });
                 });
+                firebase.database().ref('school_aquarium_bg/' + currentClassId).once('value').then(snap => {
+                    let bgData = snap.val();
+                    if(bgData) {
+                        firebase.database().ref('school_aquarium_bg/' + safeNewName).set(bgData)
+                        .then(() => firebase.database().ref('school_aquarium_bg/' + currentClassId).remove());
+                    }
+                });
+                alert(`改名成功！請重新進入 ${safeNewName}`); initClassRoom("Lobby"); showClassInput();
             }
         }
 
-        // ==========================================
-        //  Firebase 邏輯 (讀取)
-        // ==========================================
         function initClassRoom(classId) {
-            if (dbRef) dbRef.off(); 
-            
-            const allFishes = document.querySelectorAll('.fish-container'); // 修改選擇器
-            allFishes.forEach(f => f.remove());
-            fishes.length = 0;
-
+            if (dbRef) dbRef.off(); if (bgRef) bgRef.off();
+            const allFishes = document.querySelectorAll('.fish-container');
+            allFishes.forEach(f => f.remove()); fishes.length = 0;
             currentClassId = classId;
-            
             if(classId === "Lobby") {
                 document.getElementById('class-input-area').style.display = 'flex';
                 document.getElementById('class-management-area').style.display = 'none';
                 document.getElementById('classInput').value = "";
                 updateClassHighlight("Lobby");
             }
-
             document.getElementById('loading-msg').style.display = 'block';
             document.getElementById('loading-msg').innerText = classId === "Lobby" ? "正在進入優秀作品大廳..." : `正在載入 ${classId} 的水族箱...`;
 
             dbRef = firebase.database().ref('school_aquarium_fish/' + classId);
-
             dbRef.on('child_added', (snapshot) => {
-                const data = snapshot.val();
-                const key = snapshot.key;
-                if(data && data.image) {
-                    createFish(data, key);
-                }
+                const data = snapshot.val(); if(data && data.image) createFish(data, snapshot.key);
                 document.getElementById('loading-msg').style.display = 'none';
             });
+            dbRef.on('child_removed', (snapshot) => removeFishFromScreen(snapshot.key));
 
-            dbRef.on('child_removed', (snapshot) => {
-                removeFishFromScreen(snapshot.key);
+            bgRef = firebase.database().ref('school_aquarium_bg/' + classId);
+            bgRef.on('value', (snapshot) => {
+                const bgData = snapshot.val();
+                const bgLayer = document.getElementById('bg-image-layer');
+                const sandLayer = document.getElementById('sand');
+                if (bgData && bgData.image) {
+                    bgLayer.src = bgData.image; bgLayer.style.opacity = 1; sandLayer.style.opacity = 0;
+                } else {
+                    bgLayer.style.opacity = 0; sandLayer.style.opacity = 1;
+                }
             });
-            
             resetModes();
         }
 
-        function resetModes() {
-            isDeleteMode = false;
-            isSubmitMode = false;
-            updateModeButtons();
-            document.getElementById('aquarium').style.cursor = "default";
-        }
-
+        function resetModes() { isDeleteMode = false; isSubmitMode = false; updateModeButtons(); document.getElementById('aquarium').style.cursor = "default"; }
         function clearAllFish() {
-            if(!dbRef) return;
-            if(currentClassId === "Lobby") return alert("大廳不能一鍵清空！請使用單隻刪除功能。");
-            
-            if(confirm(`⚠️ 確定要清空【${currentClassId}】裡面的魚嗎？`)) {
-                dbRef.remove();
-            }
+            if(!dbRef) return; if(currentClassId === "Lobby") return alert("大廳不能一鍵清空！");
+            if(confirm(`⚠️ 確定要清空魚嗎？(背景會保留)`)) dbRef.remove();
         }
-
-        // ==========================================
-        //  模式切換邏輯
-        // ==========================================
-        function toggleDeleteMode() {
-            if(isSubmitMode) toggleSubmitMode();
-            isDeleteMode = !isDeleteMode;
-            updateModeButtons();
+        function resetBackground() { if(confirm("確定要恢復預設深海背景嗎？")) firebase.database().ref('school_aquarium_bg/' + currentClassId).remove(); }
+        function toggleDeleteMode() { if(isSubmitMode) toggleSubmitMode(); isDeleteMode = !isDeleteMode; updateModeButtons(); }
+        function toggleSubmitMode() { 
+            if(currentClassId === "Lobby") return alert("請到各班級投稿！");
+            if(isDeleteMode) toggleDeleteMode(); isSubmitMode = !isSubmitMode; updateModeButtons();
+            if(isSubmitMode) alert("✨ 進入投稿模式！點擊魚即可投稿。");
         }
-
-        function toggleSubmitMode() {
-            if(currentClassId === "Lobby") return alert("這裡已經是大廳了，請到各班級去挑選作品投稿！");
-            if(isDeleteMode) toggleDeleteMode();
-            isSubmitMode = !isSubmitMode;
-            updateModeButtons();
-            if(isSubmitMode) alert("✨ 進入投稿模式！\n\n請點擊您覺得優秀的魚，輸入作者姓名後，就能發布到大廳展示！");
-        }
-
         function updateModeButtons() {
-            const delBtn = document.getElementById('deleteModeBtn');
-            const subBtn = document.getElementById('submitModeBtn');
-            const aqua = document.getElementById('aquarium');
-
-            if(isDeleteMode) {
-                delBtn.innerText = "✅ 結束刪除模式";
-                delBtn.classList.add('delete-mode-active');
-                aqua.style.cursor = "crosshair";
-            } else {
-                delBtn.innerText = "❌ 刪除單隻魚 (關)";
-                delBtn.classList.remove('delete-mode-active');
-            }
-
-            if(isSubmitMode) {
-                subBtn.innerText = "✨ 結束投稿模式";
-                subBtn.classList.add('submit-mode-active');
-                aqua.style.cursor = "pointer";
-            } else {
-                subBtn.innerText = "🏆 投稿優秀作品 (關)";
-                subBtn.classList.remove('submit-mode-active');
-            }
-            
+            const delBtn = document.getElementById('deleteModeBtn'); const subBtn = document.getElementById('submitModeBtn'); const aqua = document.getElementById('aquarium');
+            if(isDeleteMode) { delBtn.innerText = "✅ 結束刪除"; delBtn.classList.add('delete-mode-active'); aqua.style.cursor = "crosshair"; } 
+            else { delBtn.innerText = "❌ 刪除單隻魚 (關)"; delBtn.classList.remove('delete-mode-active'); }
+            if(isSubmitMode) { subBtn.innerText = "✨ 結束投稿"; subBtn.classList.add('submit-mode-active'); aqua.style.cursor = "pointer"; }
+            else { subBtn.innerText = "🏆 投稿優秀作品 (關)"; subBtn.classList.remove('submit-mode-active'); }
             if(!isDeleteMode && !isSubmitMode) aqua.style.cursor = "default";
             fishes.forEach(fish => fish.updateStyle());
         }
 
-        // ==========================================
-        //  圖片處理
-        // ==========================================
-        let canvas = document.getElementById('editor');
-        let ctx = canvas.getContext('2d');
-        let rawImg = new Image();
-        let mode = 'rect'; 
-        let isDragging = false;
-        let startPos = {x:0, y:0};
-        let rectData = {x:0, y:0, w:0, h:0};
-        let polyPoints = [];
+        let canvas = document.getElementById('editor'); let ctx = canvas.getContext('2d'); let rawImg = new Image();
+        let mode = 'rect'; let isDragging = false; let startPos = {x:0, y:0}; let rectData = {x:0, y:0, w:0, h:0}; let polyPoints = [];
 
-        function handleBgFile(input) {
-            if (input.files && input.files[0]) {
-                let reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('bg-image-layer').src = e.target.result;
-                    document.getElementById('bg-image-layer').style.opacity = 1;
-                }
-                reader.readAsDataURL(input.files[0]);
-            }
-            input.value = '';
-        }
-        function resetBackground() { document.getElementById('bg-image-layer').style.opacity = 0; }
         function toggleControls() {
-            const container = document.getElementById('controls-container');
-            isControlsVisible = !isControlsVisible;
+            const container = document.getElementById('controls-container'); isControlsVisible = !isControlsVisible;
             container.classList.toggle('controls-hidden', !isControlsVisible);
         }
 
+        // --- 上傳處理邏輯 ---
+
+        // 上傳魚 (打開視窗, 設定模式為 fish)
         function handleFishFile(input) {
             if (input.files && input.files[0]) {
+                currentUploadType = 'fish';
                 let reader = new FileReader();
-                reader.onload = function(e) {
-                    rawImg.onload = function() { openModal(); }
-                    rawImg.src = e.target.result;
-                }
+                reader.onload = function(e) { rawImg.onload = function() { openModal(); }; rawImg.src = e.target.result; };
                 reader.readAsDataURL(input.files[0]);
             }
             input.value = '';
         }
 
+        // 上傳背景 (打開視窗, 設定模式為 bg)
+        function handleBgFile(input) {
+            if (input.files && input.files[0]) {
+                currentUploadType = 'bg';
+                let reader = new FileReader();
+                reader.onload = function(e) { rawImg.onload = function() { openModal(); }; rawImg.src = e.target.result; };
+                reader.readAsDataURL(input.files[0]);
+            }
+            input.value = '';
+        }
+
+        // ★★★ 真實預覽更新 ★★★
         function updateSizePreview(val) {
-            const previewIcon = document.getElementById('preview-fish-icon');
-            let scaledSize = val / 4; 
-            previewIcon.style.width = scaledSize + 'px';
-            previewIcon.style.height = scaledSize + 'px';
+            const previewImg = document.getElementById('real-preview-img');
+            previewImg.style.width = val + 'px'; // 讓圖片寬度直接等於滑桿數值
         }
 
         function openModal() { 
             document.getElementById('modal').style.display = 'flex'; 
             resetCrop(); 
             resizeCanvas(); 
-            let defaultSize = 100;
-            document.getElementById('sizeSlider').value = defaultSize;
-            updateSizePreview(defaultSize);
+
+            // 根據上傳類型，顯示/隱藏不同的工具列
+            if (currentUploadType === 'fish') {
+                document.getElementById('crop-mode-row').style.display = 'flex'; // 顯示形狀選擇
+                document.getElementById('size-preview-row').style.display = 'flex'; // 顯示大小調整
+                document.getElementById('real-preview-img').src = rawImg.src; // 設定真實預覽圖
+                
+                let defaultSize = 100;
+                document.getElementById('sizeSlider').value = defaultSize;
+                updateSizePreview(defaultSize);
+            } else {
+                // 背景模式：強制矩形，隱藏不必要的工具
+                setMode('rect');
+                document.getElementById('crop-mode-row').style.display = 'none';
+                document.getElementById('size-preview-row').style.display = 'none';
+                document.getElementById('instruction').innerText = "請拖曳框框，選取要作為背景的範圍";
+            }
         }
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
         
         function resizeCanvas() {
             let wrapper = document.getElementById('canvas-wrapper');
             let scale = Math.min((wrapper.clientWidth-20)/rawImg.width, (wrapper.clientHeight-20)/rawImg.height);
-            canvas.width = rawImg.width * scale; canvas.height = rawImg.height * scale;
-            draw();
+            canvas.width = rawImg.width * scale; canvas.height = rawImg.height * scale; draw();
         }
-        
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(rawImg, 0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(rawImg, 0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-
             if (mode === 'rect' && rectData.w !== 0) {
                 ctx.clearRect(rectData.x, rectData.y, rectData.w, rectData.h);
                 ctx.drawImage(rawImg, rectData.x/(canvas.width/rawImg.width), rectData.y/(canvas.height/rawImg.height), rectData.w/(canvas.width/rawImg.width), rectData.h/(canvas.height/rawImg.height), rectData.x, rectData.y, rectData.w, rectData.h);
@@ -597,213 +489,123 @@
                 ctx.fillStyle = 'red'; polyPoints.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill(); });
             }
         }
-        
         function getPos(e) { let r = canvas.getBoundingClientRect(); let cx = e.touches?e.touches[0].clientX:e.clientX; let cy = e.touches?e.touches[0].clientY:e.clientY; return {x:cx-r.left, y:cy-r.top}; }
         function start(e) { if(e.type==='touchstart')e.preventDefault(); let p=getPos(e); if(mode==='rect'){isDragging=true;startPos=p;rectData={x:p.x,y:p.y,w:0,h:0};}else{polyPoints.push(p);draw();} }
         function move(e) { if(!isDragging||mode!=='rect')return; if(e.type==='touchmove')e.preventDefault(); let p=getPos(e); rectData.w=p.x-startPos.x; rectData.h=p.y-startPos.y; draw(); }
         function end() { isDragging=false; }
-        
         canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', end);
         canvas.addEventListener('touchstart', start, {passive:false}); canvas.addEventListener('touchmove', move, {passive:false}); canvas.addEventListener('touchend', end);
         function setMode(m) { mode=m; resetCrop(); document.getElementById('instruction').innerText = mode==='rect'?"拖曳畫出方框":"沿著魚邊緣點擊"; }
         function resetCrop() { rectData={x:0,y:0,w:0,h:0}; polyPoints=[]; draw(); }
 
+        // ★★★ 核心完成函數 (區分魚與背景) ★★★
         function finishCrop() {
-            let tempCanvas = document.createElement('canvas'); 
-            let tCtx = tempCanvas.getContext('2d'); 
-            let r = rawImg.width / canvas.width;
-            let sizeVal = parseInt(document.getElementById('sizeSlider').value);
-
+            let tempCanvas = document.createElement('canvas'); let tCtx = tempCanvas.getContext('2d'); let r = rawImg.width / canvas.width;
+            
+            // 計算裁剪範圍
             let cropX, cropY, cropW, cropH;
             if(mode==='rect'){
                 if(rectData.w===0) return alert("請先框選");
-                cropX = rectData.w > 0 ? rectData.x : rectData.x + rectData.w;
-                cropY = rectData.h > 0 ? rectData.y : rectData.y + rectData.h;
-                cropW = Math.abs(rectData.w);
-                cropH = Math.abs(rectData.h);
+                cropX = rectData.w > 0 ? rectData.x : rectData.x + rectData.w; cropY = rectData.h > 0 ? rectData.y : rectData.y + rectData.h;
+                cropW = Math.abs(rectData.w); cropH = Math.abs(rectData.h);
             } else {
                 if(polyPoints.length<3) return alert("請至少點3個點");
                 let minX=Infinity, minY=Infinity, maxX=0, maxY=0; 
                 polyPoints.forEach(p=>{if(p.x<minX)minX=p.x;if(p.x>maxX)maxX=p.x;if(p.y<minY)minY=p.y;if(p.y>maxY)maxY=p.y;});
-                cropX = minX; cropY = minY;
-                cropW = maxX - minX; cropH = maxY - minY;
+                cropX = minX; cropY = minY; cropW = maxX - minX; cropH = maxY - minY;
             }
 
-            const MAX_WIDTH = 500;
-            let finalScale = 1;
-            let realW = cropW * r;
-            let realH = cropH * r;
+            // 壓縮設定
+            // 背景允許較大 (1024)，魚允許較小 (500)
+            const MAX_WIDTH = (currentUploadType === 'bg') ? 1024 : 500;
+            let finalScale = 1; let realW = cropW * r; let realH = cropH * r;
+            if (realW > MAX_WIDTH) finalScale = MAX_WIDTH / realW;
 
-            if (realW > MAX_WIDTH) {
-                finalScale = MAX_WIDTH / realW;
-            }
+            tempCanvas.width = realW * finalScale; tempCanvas.height = realH * finalScale; tCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-            tempCanvas.width = realW * finalScale;
-            tempCanvas.height = realH * finalScale;
-            tCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-            if (mode === 'rect') {
-                tCtx.drawImage(rawImg, cropX * r, cropY * r, realW, realH, 0, 0, tempCanvas.width, tempCanvas.height);
-            } else {
-                tCtx.save(); tCtx.beginPath();
-                let scaleTotal = r * finalScale;
+            if (mode === 'rect') { tCtx.drawImage(rawImg, cropX * r, cropY * r, realW, realH, 0, 0, tempCanvas.width, tempCanvas.height); } 
+            else {
+                tCtx.save(); tCtx.beginPath(); let scaleTotal = r * finalScale;
                 tCtx.moveTo((polyPoints[0].x - cropX) * scaleTotal, (polyPoints[0].y - cropY) * scaleTotal);
                 for(let i=1; i<polyPoints.length; i++) tCtx.lineTo((polyPoints[i].x - cropX) * scaleTotal, (polyPoints[i].y - cropY) * scaleTotal);
-                tCtx.closePath(); tCtx.clip();
-                tCtx.drawImage(rawImg, -cropX * scaleTotal, -cropY * scaleTotal, rawImg.width * finalScale, rawImg.height * finalScale);
-                tCtx.restore();
+                tCtx.closePath(); tCtx.clip(); tCtx.drawImage(rawImg, -cropX * scaleTotal, -cropY * scaleTotal, rawImg.width * finalScale, rawImg.height * finalScale); tCtx.restore();
             }
-            
-            let base64 = tempCanvas.toDataURL('image/png');
-            
-            if(dbRef) {
-                document.getElementById('finishBtn').innerText = "上傳中...";
-                dbRef.push({ 
-                    image: base64, 
-                    size: sizeVal, 
-                    timestamp: Date.now() 
-                })
-                .then(() => { closeModal(); document.getElementById('finishBtn').innerText = "上傳雲端"; })
-                .catch(err => { alert("上傳失敗"); document.getElementById('finishBtn').innerText = "上傳雲端"; });
+
+            // 上傳邏輯分支
+            if (currentUploadType === 'fish') {
+                let sizeVal = parseInt(document.getElementById('sizeSlider').value);
+                let base64 = tempCanvas.toDataURL('image/png'); // 魚用 PNG 保留透明
+                if(dbRef) {
+                    document.getElementById('finishBtn').innerText = "上傳中...";
+                    dbRef.push({ image: base64, size: sizeVal, timestamp: Date.now() })
+                    .then(() => { closeModal(); document.getElementById('finishBtn').innerText = "確定上傳"; })
+                    .catch(err => { alert("上傳失敗"); document.getElementById('finishBtn').innerText = "確定上傳"; });
+                }
+            } else {
+                // 背景模式
+                let base64 = tempCanvas.toDataURL('image/jpeg', 0.8); // 背景用 JPG 比較小
+                if(currentClassId) {
+                    document.getElementById('finishBtn').innerText = "更換中...";
+                    firebase.database().ref('school_aquarium_bg/' + currentClassId).set({ image: base64, timestamp: Date.now() })
+                    .then(() => { closeModal(); document.getElementById('finishBtn').innerText = "確定上傳"; alert("背景更換成功！"); })
+                    .catch(err => { alert("上傳失敗"); document.getElementById('finishBtn').innerText = "確定上傳"; });
+                }
             }
         }
 
-        const aquarium = document.getElementById('aquarium');
-        const fishes = [];
-
+        const aquarium = document.getElementById('aquarium'); const fishes = [];
         function removeFishFromScreen(key) {
             const index = fishes.findIndex(f => f.dbKey === key);
-            if(index !== -1) {
-                if(fishes[index].container) fishes[index].container.remove(); // 移除容器
-                fishes.splice(index, 1);
-            }
+            if(index !== -1) { if(fishes[index].container) fishes[index].container.remove(); fishes.splice(index, 1); }
         }
 
-        // ★★★ 修改 Fish 類別：創建容器並加入名牌 ★★★
         class Fish {
             constructor(data, dbKey) {
-                this.dbKey = dbKey;
-                this.imageSrc = data.image;
-                this.size = data.size || (Math.random() * 80 + 50);
+                this.dbKey = dbKey; this.imageSrc = data.image; this.size = data.size || (Math.random() * 80 + 50);
                 this.authorInfo = data.author ? `${data.fromClass} ${data.author}` : "";
-
-                // 1. 建立容器 Div
-                this.container = document.createElement('div');
-                this.container.className = 'fish-container';
-                this.container.style.opacity = '0';
-                // 如果有作者資訊，增加標記class
+                this.container = document.createElement('div'); this.container.className = 'fish-container'; this.container.style.opacity = '0';
                 if(this.authorInfo) this.container.classList.add('has-author');
-
-                // 2. 如果有作者資訊，建立名牌 Div
                 if (this.authorInfo) {
-                     let label = document.createElement('div');
-                     label.className = 'fish-name-label';
-                     label.innerText = this.authorInfo;
-                     this.container.appendChild(label);
+                     let label = document.createElement('div'); label.className = 'fish-name-label'; label.innerText = this.authorInfo; this.container.appendChild(label);
                 }
-
-                // 3. 建立魚的圖片 Img
-                this.element = document.createElement('img');
-                this.element.src = this.imageSrc;
-                this.element.className = 'fish-img'; // 改用新 class
-                this.element.style.width = this.size + 'px';
-                
-                // 將圖片加入容器
+                this.element = document.createElement('img'); this.element.src = this.imageSrc; this.element.className = 'fish-img'; this.element.style.width = this.size + 'px';
                 this.container.appendChild(this.element);
-
-                // 初始化位置
-                // 需要考慮名牌高度，避免生成在太上方被切掉
                 let labelHeight = this.authorInfo ? 25 : 0; 
-                this.x = Math.random() * (window.innerWidth - this.size);
-                this.y = Math.random() * (window.innerHeight - this.size - labelHeight) + labelHeight;
+                this.x = Math.random() * (window.innerWidth - this.size); this.y = Math.random() * (window.innerHeight - this.size - labelHeight) + labelHeight;
+                this.vx = (Math.random() - 0.5) * 3; this.vy = (Math.random() - 0.5) * 1.5; if(Math.abs(this.vx) < 0.5) this.vx = 1;
 
-                this.vx = (Math.random() - 0.5) * 3;
-                this.vy = (Math.random() - 0.5) * 1.5;
-                if(Math.abs(this.vx) < 0.5) this.vx = 1;
-
-                // 點擊事件改綁在容器上
                 this.container.onclick = (e) => {
                     e.stopPropagation(); 
-
-                    if(isDeleteMode) {
-                        if(confirm("確定要刪除這隻魚嗎？")) {
-                            firebase.database().ref('school_aquarium_fish/' + currentClassId + '/' + this.dbKey).remove();
-                        }
-                        return;
-                    }
-
+                    if(isDeleteMode) { if(confirm("確定要刪除嗎？")) firebase.database().ref('school_aquarium_fish/' + currentClassId + '/' + this.dbKey).remove(); return; }
                     if(isSubmitMode) {
-                        let authorName = prompt("🎉 發現優秀作品！\n\n請輸入作者學生姓名：");
+                        let authorName = prompt("請輸入作者學生姓名：");
                         if(authorName) {
                             firebase.database().ref('school_aquarium_fish/Lobby').push({
-                                image: this.imageSrc,
-                                size: this.size,
-                                author: authorName,
-                                fromClass: currentClassId,
-                                timestamp: Date.now()
-                            }).then(() => {
-                                alert(`已將 ${currentClassId} ${authorName} 的作品發布到大廳！`);
-                                toggleSubmitMode();
-                            });
+                                image: this.imageSrc, size: this.size, author: authorName, fromClass: currentClassId, timestamp: Date.now()
+                            }).then(() => { alert(`已發布到大廳！`); toggleSubmitMode(); });
                         }
                         return;
                     }
-
-                    if(this.authorInfo) {
-                        alert("✨ 這是一幅優秀作品！\n\n🎨 作者：" + this.authorInfo);
-                    }
+                    if(this.authorInfo) alert("✨ 優秀作品：\n" + this.authorInfo);
                 };
-
-                aquarium.appendChild(this.container); // 加入容器
-                setTimeout(() => { this.container.style.opacity = '1'; }, 100);
+                aquarium.appendChild(this.container); setTimeout(() => { this.container.style.opacity = '1'; }, 100);
             }
-
             updateStyle() {
-                // 樣式改為操作容器
-                this.container.classList.remove('deletable', 'submittable');
-                this.container.style.cursor = this.authorInfo ? 'help' : 'default';
-
-                if(isDeleteMode) {
-                    this.container.classList.add('deletable');
-                    this.container.style.cursor = 'pointer';
-                } 
-                else if (isSubmitMode) {
-                    this.container.classList.add('submittable');
-                    this.container.style.cursor = 'pointer';
-                }
+                this.container.classList.remove('deletable', 'submittable'); this.container.style.cursor = this.authorInfo ? 'help' : 'default';
+                if(isDeleteMode) { this.container.classList.add('deletable'); this.container.style.cursor = 'pointer'; } 
+                else if (isSubmitMode) { this.container.classList.add('submittable'); this.container.style.cursor = 'pointer'; }
             }
-
             update() {
-                // 邊界檢查需要考慮名牌的高度 (約 25px)
                 let labelOffset = this.authorInfo ? 25 : 0;
-
                 this.x += this.vx; this.y += this.vy;
-                
-                // 左右邊界
                 if (this.x <= 0 || this.x + this.size >= window.innerWidth) this.vx *= -1;
-                
-                // 上下邊界 (上方要預留名牌空間)
                 if (this.y <= labelOffset || this.y + this.size >= window.innerHeight) this.vy *= -1;
-                
-                // 移動整個容器
                 this.container.style.transform = `translate(${this.x}px, ${this.y}px)`;
-
-                // 轉向只針對魚的圖片
-                let scaleX = this.vx > 0 ? -1 : 1;
-                this.element.style.transform = `scaleX(${scaleX})`;
+                let scaleX = this.vx > 0 ? -1 : 1; this.element.style.transform = `scaleX(${scaleX})`;
             }
         }
-
-        function createFish(data, key) {
-            const f = new Fish(data, key);
-            f.updateStyle();
-            fishes.push(f);
-        }
-
-        function animate() {
-            fishes.forEach(fish => fish.update());
-            requestAnimationFrame(animate);
-        }
+        function createFish(data, key) { const f = new Fish(data, key); f.updateStyle(); fishes.push(f); }
+        function animate() { fishes.forEach(fish => fish.update()); requestAnimationFrame(animate); }
         animate();
     </script>
 </body>
