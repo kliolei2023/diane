@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>校園數位水族箱</title>
+    <title>校園數位共創水族箱 (分班版)</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
         /* --- 基礎設定 --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #222; font-family: "Microsoft JhengHei", sans-serif; }
@@ -22,61 +25,79 @@
         /* 背景圖片層 */
         #bg-image-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: contain; /* 確保圖片完整顯示不裁切 */
-            background-color: rgba(0,0,0,0.3);
-            opacity: 0;
-            transition: opacity 0.5s;
-            z-index: 0;
-            pointer-events: none;
+            object-fit: cover; opacity: 0; transition: opacity 0.5s;
+            z-index: 0; pointer-events: none;
         }
 
-        /* 沙地 */
+        /* 海底沙地 */
         #sand {
             position: absolute; bottom: 0; width: 100%; height: 80px;
             background: #e6d99c; border-top: 5px solid #d4c585; 
-            z-index: 2; 
-            pointer-events: none;
-            transition: opacity 0.5s;
+            z-index: 2; pointer-events: none;
         }
 
-        /* --- 操作面板 --- */
+        /* --- 頂部班級列 --- */
+        #top-bar {
+            position: absolute; top: 0; left: 0; width: 100%; height: 50px;
+            background: rgba(0,0,0,0.6); z-index: 150;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 15px; box-sizing: border-box; color: white;
+        }
+        #class-info { font-size: 18px; font-weight: bold; color: #ffeb3b; display: flex; align-items: center; gap: 10px;}
+        #class-controls { display: flex; gap: 5px; }
+        
+        input.class-input {
+            padding: 5px; border-radius: 4px; border: none; width: 80px; text-align: center;
+        }
+
+        /* --- 左側操作面板 --- */
         #controls {
-            position: absolute; top: 15px; left: 15px; z-index: 100;
+            position: absolute; top: 60px; left: 15px; z-index: 100;
             display: flex; flex-direction: column; gap: 10px;
         }
 
         .panel {
             background: rgba(255,255,255,0.95); 
-            padding: 12px; 
-            border-radius: 12px;
+            padding: 12px; border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            display: flex; flex-direction: column; gap: 8px;
-            width: 200px;
+            display: flex; flex-direction: column; gap: 8px; width: 180px;
         }
 
         h3 { margin: 0 0 5px 0; font-size: 16px; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
         
         .btn {
-            border: none; padding: 10px; border-radius: 8px; 
+            border: none; padding: 8px; border-radius: 6px; 
             font-size: 14px; cursor: pointer; color: white;
-            transition: transform 0.1s, opacity 0.2s;
-            text-align: center; font-weight: bold;
+            text-align: center; font-weight: bold; transition: 0.2s;
         }
         .btn:active { transform: scale(0.96); }
         .btn-blue { background: #007bff; }
         .btn-orange { background: #fd7e14; }
-        .btn-green { background: #28a745; }
         .btn-red { background: #dc3545; }
         .btn-gray { background: #6c757d; }
-        
+        .btn-purple { background: #6f42c1; }
+
+        /* 刪除模式啟用時的按鈕狀態 */
+        .delete-mode-active {
+            background: #dc3545 !important;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
+
         input[type="file"] { display: none; }
 
+        /* 魚的樣式 */
         .fish { 
-            position: absolute; 
-            z-index: 10; 
-            pointer-events: auto; 
-            cursor: pointer;
+            position: absolute; z-index: 10; 
+            cursor: pointer; /* 預設是指標 */
             filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
+            transition: opacity 0.5s, filter 0.2s; 
+        }
+        
+        /* 刪除模式下的魚 */
+        .fish.deletable:hover {
+            filter: drop-shadow(0 0 10px red); /* 被選中時發紅光 */
+            transform: scale(1.1);
         }
 
         /* --- 裁剪視窗 (Modal) --- */
@@ -85,59 +106,64 @@
             background: rgba(0,0,0,0.95); z-index: 200;
             display: none; flex-direction: column;
         }
-
         #toolbar {
             height: 70px; background: #333; display: flex; align-items: center; justify-content: center; gap: 10px;
             padding: 0 10px; color: white;
         }
-
         #canvas-wrapper {
             flex: 1; display: flex; align-items: center; justify-content: center;
             overflow: hidden; position: relative; touch-action: none;
         }
-        
         canvas { border: 2px solid #666; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-
         .radio-group { display: flex; gap: 10px; background: #555; padding: 5px 15px; border-radius: 20px; }
         .radio-group label { cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 14px; color: white;}
+        
+        #loading-msg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: white; font-size: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            z-index: 5; pointer-events: none;
+        }
 
-        /* --- 大小預覽視窗 (New) --- */
-        #sizePreviewModal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.85); z-index: 210; 
-            flex-direction: column; align-items: center; justify-content: center;
-        }
-        .preview-box {
-            background: rgba(255,255,255,0.95); padding: 20px; border-radius: 12px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5); text-align: center; 
-            width: 300px; display: flex; flex-direction: column; align-items: center; gap: 15px;
-        }
-        #previewContainer {
-            width: 100%; height: 200px; border: 2px dashed #ccc; 
-            background: #eee; position: relative; overflow: hidden;
-            display: flex; align-items: center; justify-content: center;
-        }
     </style>
 </head>
 <body>
 
     <div id="aquarium">
+        <div id="top-bar">
+            <div id="class-info">
+                <span>班級：</span>
+                <span id="current-class-display">公共大廳</span>
+            </div>
+            <div id="class-controls">
+                <input type="text" id="classInput" class="class-input" placeholder="輸入班號">
+                <button class="btn btn-blue" style="padding: 5px 10px;" onclick="switchClass()">進入/新增</button>
+            </div>
+        </div>
+
+        <div id="loading-msg">正在連線至雲端水族箱...</div>
         <img id="bg-image-layer" src="" alt="Background">
         <div id="sand"></div>
 
         <div id="controls">
             <div class="panel">
-                <h3>🐟 放入圖片</h3>
+                <h3>🐟 創作與上傳</h3>
                 <button class="btn btn-blue" onclick="document.getElementById('fishInput').click()">📸 上傳並裁剪畫作</button>
                 <input type="file" id="fishInput" accept="image/*" onchange="handleFishFile(this)">
-                <div style="font-size:12px; color:#666; text-align:center;">支援方形或描邊裁剪</div>
             </div>
 
             <div class="panel">
-                <h3>🏫 更換場景</h3>
-                <button class="btn btn-orange" onclick="document.getElementById('bgInput').click()">🖼️ 上傳校園照片</button>
+                <h3>🛠️ 管理工具</h3>
+                <button id="deleteModeBtn" class="btn btn-purple" onclick="toggleDeleteMode()">❌ 刪除單隻魚 (關)</button>
+                <div style="font-size:12px; color:#666; margin-bottom:5px;">開啟後，點擊魚即可刪除</div>
+                
+                <button class="btn btn-red" onclick="clearAllFish()">🗑️ 一鍵清空本班</button>
+            </div>
+
+            <div class="panel">
+                <h3>🏫 場景設定</h3>
+                <button class="btn btn-orange" onclick="document.getElementById('bgInput').click()">🖼️ 更換背景</button>
                 <input type="file" id="bgInput" accept="image/*" onchange="handleBgFile(this)">
-                <button class="btn btn-gray" onclick="resetBackground()">🌊 恢復深海模式</button>
+                <button class="btn btn-gray" onclick="resetBackground()">🌊 恢復深海</button>
             </div>
         </div>
     </div>
@@ -148,78 +174,169 @@
                 <label><input type="radio" name="mode" value="rect" checked onclick="setMode('rect')"> 🟦 方形</label>
                 <label><input type="radio" name="mode" value="poly" onclick="setMode('poly')"> ✂️ 描邊</label>
             </div>
-            <button class="btn btn-green" onclick="finishCrop()">下一步</button>
+            <button class="btn btn-green" id="finishBtn" onclick="finishCrop()">上傳雲端</button>
             <button class="btn btn-red" onclick="resetCrop()">重置</button>
             <button class="btn btn-gray" onclick="closeModal()">取消</button>
         </div>
         <div id="canvas-wrapper">
             <canvas id="editor"></canvas>
         </div>
-        <div style="text-align:center; color:#aaa; padding:8px; font-size:14px;" id="instruction">
-            拖曳滑鼠/手指畫出方框
-        </div>
-    </div>
-
-    <div id="sizePreviewModal">
-        <div class="preview-box">
-            <h3>📏 調整大小</h3>
-            <div id="previewContainer">
-                <img id="fishPreviewImage" src="" />
-            </div>
-            <div style="width: 100%;">
-                <label style="font-size: 14px; color: #333;">寬度: <span id="currentFishSize">100</span>px</label>
-                <input type="range" id="fishSizeSlider" min="30" max="250" value="100" style="width: 100%; margin-top: 5px;">
-            </div>
-            <div style="display: flex; gap: 10px; width: 100%; justify-content: center;">
-                <button class="btn btn-green" onclick="confirmFishSize()" style="flex:1;">✅ 確認</button>
-                <button class="btn btn-gray" onclick="cancelFishSize()" style="flex:1;">❌ 取消</button>
-            </div>
-        </div>
+        <div style="text-align:center; color:#aaa; padding:8px; font-size:14px;" id="instruction">拖曳畫出方框</div>
     </div>
 
     <script>
-        // --- 全域變數 ---
+        // ==========================================
+        // Firebase 設定
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAUoYIt2CdivHIoLK-ZjsucejJkuzzQRnA",
+            authDomain: "fish321-36ce2.firebaseapp.com",
+            databaseURL: "https://fish321-36ce2-default-rtdb.firebaseio.com",
+            projectId: "fish321-36ce2",
+            storageBucket: "fish321-36ce2.firebasestorage.app",
+            messagingSenderId: "237771099270",
+            appId: "1:237771099270:web:9621037d8ec40242091507",
+            measurementId: "G-4QESL7JL49"
+        };
+
+        let dbRef = null;
+        let currentClassId = "Lobby"; // 預設班級 ID
+        let isDeleteMode = false;     // 刪除模式狀態
+
+        // 初始化 Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            initClassRoom(currentClassId); // 啟動預設班級
+        } catch (e) {
+            console.error("Firebase Init Error:", e);
+            document.getElementById('loading-msg').innerText = "連線失敗";
+        }
+
+        // ==========================================
+        //  班級管理核心邏輯
+        // ==========================================
+        
+        // 切換班級
+        function switchClass() {
+            const inputVal = document.getElementById('classInput').value.trim();
+            if(!inputVal) return alert("請輸入班級名稱！");
+            
+            // 避免特殊字元造成路徑錯誤
+            const safeClassId = inputVal.replace(/[.#$/[\]]/g, "_"); 
+            
+            initClassRoom(safeClassId);
+            document.getElementById('classInput').value = ''; // 清空輸入框
+        }
+
+        // 初始化/連接到指定班級
+        function initClassRoom(classId) {
+            // 1. 如果之前有連線，先斷開舊的監聽
+            if (dbRef) {
+                dbRef.off(); 
+            }
+
+            // 2. 清空畫面上的魚
+            const allFishes = document.querySelectorAll('.fish');
+            allFishes.forEach(f => f.remove());
+            fishes.length = 0; // 清空陣列
+
+            // 3. 更新狀態
+            currentClassId = classId;
+            document.getElementById('current-class-display').innerText = classId === "Lobby" ? "公共大廳" : classId + " 班";
+            document.getElementById('loading-msg').style.display = 'block';
+            document.getElementById('loading-msg').innerText = `正在載入 ${classId} 的水族箱...`;
+
+            // 4. 重新連接資料庫路徑： school_aquarium_fish / 班級ID
+            dbRef = firebase.database().ref('school_aquarium_fish/' + classId);
+
+            // 5. 監聽：新增魚
+            dbRef.on('child_added', (snapshot) => {
+                const data = snapshot.val();
+                const key = snapshot.key; // 取得這隻魚的唯一 ID
+                if(data && data.image) {
+                    createFish(data.image, key); 
+                }
+                document.getElementById('loading-msg').style.display = 'none';
+            });
+
+            // 6. 監聽：刪除魚 (當有人刪除時，同步移除畫面上的魚)
+            dbRef.on('child_removed', (snapshot) => {
+                const key = snapshot.key;
+                removeFishFromScreen(key);
+            });
+        }
+
+        // 清空全班功能
+        function clearAllFish() {
+            if(!dbRef) return;
+            let confirmClear = confirm(`⚠️ 警告！\n\n您確定要清空【${currentClassId}】所有的魚嗎？\n此動作無法復原！`);
+            if(confirmClear) {
+                // 直接移除該班級節點下的所有資料
+                dbRef.remove()
+                    .then(() => alert("水族箱已清空！"))
+                    .catch(err => alert("清空失敗：" + err.message));
+            }
+        }
+
+        // 刪除模式切換
+        function toggleDeleteMode() {
+            isDeleteMode = !isDeleteMode;
+            const btn = document.getElementById('deleteModeBtn');
+            const aquariumDiv = document.getElementById('aquarium');
+            
+            if(isDeleteMode) {
+                btn.innerText = "✅ 結束刪除模式";
+                btn.classList.add('delete-mode-active');
+                aquariumDiv.style.cursor = "crosshair"; // 游標變成準心
+                alert("進入刪除模式！\n\n現在點擊畫面上的魚，該隻魚就會被永久刪除。");
+            } else {
+                btn.innerText = "❌ 刪除單隻魚 (關)";
+                btn.classList.remove('delete-mode-active');
+                aquariumDiv.style.cursor = "default";
+            }
+            
+            // 更新所有魚的狀態樣式
+            fishes.forEach(fish => fish.updateStyle());
+        }
+
+        // 從畫面移除魚 (被動接收資料庫指令)
+        function removeFishFromScreen(key) {
+            // 從陣列中找到這隻魚
+            const index = fishes.findIndex(f => f.dbKey === key);
+            if(index !== -1) {
+                // 移除 DOM 元素
+                if(fishes[index].element) fishes[index].element.remove();
+                // 從陣列移除
+                fishes.splice(index, 1);
+            }
+        }
+
+        // ==========================================
+        //  圖片處理與變數
+        // ==========================================
         let canvas = document.getElementById('editor');
         let ctx = canvas.getContext('2d');
         let rawImg = new Image();
         let mode = 'rect'; 
-        
         let isDragging = false;
         let startPos = {x:0, y:0};
         let rectData = {x:0, y:0, w:0, h:0};
         let polyPoints = [];
 
-        // 保存裁剪後的圖片資料
-        let croppedFishDataURL = '';
-
-        // ==========================================
-        //  背景更換邏輯
-        // ==========================================
         function handleBgFile(input) {
             if (input.files && input.files[0]) {
                 let reader = new FileReader();
                 reader.onload = function(e) {
                     const bgLayer = document.getElementById('bg-image-layer');
                     bgLayer.src = e.target.result;
-                    bgLayer.style.opacity = 1; 
-                    // 有背景圖時，隱藏沙地
-                    document.getElementById('sand').style.display = 'none';
+                    bgLayer.style.opacity = 1;
                 }
                 reader.readAsDataURL(input.files[0]);
             }
             input.value = '';
         }
+        function resetBackground() { document.getElementById('bg-image-layer').style.opacity = 0; }
 
-        function resetBackground() {
-            const bgLayer = document.getElementById('bg-image-layer');
-            bgLayer.style.opacity = 0; 
-            // 恢復深海時，顯示沙地
-            document.getElementById('sand').style.display = 'block';
-        }
-
-        // ==========================================
-        //  圖片裁剪邏輯
-        // ==========================================
         function handleFishFile(input) {
             if (input.files && input.files[0]) {
                 let reader = new FileReader();
@@ -231,221 +348,135 @@
             }
             input.value = '';
         }
-
-        function openModal() {
-            document.getElementById('modal').style.display = 'flex';
-            resetCrop();
-            resizeCanvas();
-        }
-
-        function closeModal() {
-            document.getElementById('modal').style.display = 'none';
-        }
-
+        function openModal() { document.getElementById('modal').style.display = 'flex'; resetCrop(); resizeCanvas(); }
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
+        
         function resizeCanvas() {
             let wrapper = document.getElementById('canvas-wrapper');
-            let maxWidth = wrapper.clientWidth - 20;
-            let maxHeight = wrapper.clientHeight - 20;
-            let scale = Math.min(maxWidth / rawImg.width, maxHeight / rawImg.height);
-            canvas.width = rawImg.width * scale;
-            canvas.height = rawImg.height * scale;
+            let scale = Math.min((wrapper.clientWidth-20)/rawImg.width, (wrapper.clientHeight-20)/rawImg.height);
+            canvas.width = rawImg.width * scale; canvas.height = rawImg.height * scale;
             draw();
         }
-
+        
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(rawImg, 0, 0, canvas.width, canvas.height);
-            
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             if (mode === 'rect' && rectData.w !== 0) {
                 ctx.clearRect(rectData.x, rectData.y, rectData.w, rectData.h);
-                ctx.drawImage(rawImg, 
-                    rectData.x / (canvas.width/rawImg.width), rectData.y / (canvas.height/rawImg.height), 
-                    rectData.w / (canvas.width/rawImg.width), rectData.h / (canvas.height/rawImg.height), 
-                    rectData.x, rectData.y, rectData.w, rectData.h
-                );
-                ctx.strokeStyle = '#00ff00'; ctx.lineWidth = 2;
-                ctx.strokeRect(rectData.x, rectData.y, rectData.w, rectData.h);
-            } 
-            else if (mode === 'poly' && polyPoints.length > 0) {
-                ctx.save();
-                ctx.beginPath();
-                ctx.moveTo(polyPoints[0].x, polyPoints[0].y);
+                ctx.drawImage(rawImg, rectData.x/(canvas.width/rawImg.width), rectData.y/(canvas.height/rawImg.height), rectData.w/(canvas.width/rawImg.width), rectData.h/(canvas.height/rawImg.height), rectData.x, rectData.y, rectData.w, rectData.h);
+                ctx.strokeStyle = '#00ff00'; ctx.lineWidth = 2; ctx.strokeRect(rectData.x, rectData.y, rectData.w, rectData.h);
+            } else if (mode === 'poly' && polyPoints.length > 0) {
+                ctx.save(); ctx.beginPath(); ctx.moveTo(polyPoints[0].x, polyPoints[0].y);
                 for(let i=1; i<polyPoints.length; i++) ctx.lineTo(polyPoints[i].x, polyPoints[i].y);
-                if(polyPoints.length > 2) ctx.closePath();
-                ctx.clip();
-                ctx.clearRect(0,0,canvas.width,canvas.height);
-                ctx.drawImage(rawImg, 0, 0, canvas.width, canvas.height);
-                ctx.restore();
-
-                ctx.beginPath();
-                ctx.strokeStyle = '#ffff00'; ctx.lineWidth = 2;
-                ctx.moveTo(polyPoints[0].x, polyPoints[0].y);
+                if(polyPoints.length > 2) ctx.closePath(); ctx.clip(); ctx.clearRect(0,0,canvas.width,canvas.height);
+                ctx.drawImage(rawImg, 0, 0, canvas.width, canvas.height); ctx.restore();
+                ctx.beginPath(); ctx.strokeStyle = '#ffff00'; ctx.lineWidth = 2; ctx.moveTo(polyPoints[0].x, polyPoints[0].y);
                 for(let i=1; i<polyPoints.length; i++) ctx.lineTo(polyPoints[i].x, polyPoints[i].y);
-                if(polyPoints.length > 2) ctx.lineTo(polyPoints[0].x, polyPoints[0].y);
-                ctx.stroke();
-                
-                ctx.fillStyle = 'red';
-                polyPoints.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill(); });
+                if(polyPoints.length > 2) ctx.lineTo(polyPoints[0].x, polyPoints[0].y); ctx.stroke();
+                ctx.fillStyle = 'red'; polyPoints.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill(); });
             }
         }
-
-        // --- 互動偵測 ---
-        function getPos(e) {
-            let rect = canvas.getBoundingClientRect();
-            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - rect.left, y: clientY - rect.top };
-        }
-
-        function startInteraction(e) {
-            if(e.type === 'touchstart') e.preventDefault();
-            let pos = getPos(e);
-            if (mode === 'rect') {
-                isDragging = true; startPos = pos; rectData = {x: pos.x, y: pos.y, w: 0, h: 0};
-            } else {
-                polyPoints.push(pos); draw();
-            }
-        }
-
-        function moveInteraction(e) {
-            if (!isDragging || mode !== 'rect') return;
-            if(e.type === 'touchmove') e.preventDefault();
-            let pos = getPos(e);
-            rectData.w = pos.x - startPos.x;
-            rectData.h = pos.y - startPos.y;
-            draw();
-        }
-
-        function endInteraction(e) { isDragging = false; }
-
-        canvas.addEventListener('mousedown', startInteraction);
-        canvas.addEventListener('mousemove', moveInteraction);
-        canvas.addEventListener('mouseup', endInteraction);
-        canvas.addEventListener('touchstart', startInteraction, {passive: false});
-        canvas.addEventListener('touchmove', moveInteraction, {passive: false});
-        canvas.addEventListener('touchend', endInteraction);
-
-        function setMode(newMode) {
-            mode = newMode; resetCrop();
-            document.getElementById('instruction').innerText = mode === 'rect' ? "拖曳畫出方框" : "沿著魚邊緣點擊";
-        }
-        function resetCrop() { rectData = {x:0, y:0, w:0, h:0}; polyPoints = []; draw(); }
+        
+        function getPos(e) { let r = canvas.getBoundingClientRect(); let cx = e.touches?e.touches[0].clientX:e.clientX; let cy = e.touches?e.touches[0].clientY:e.clientY; return {x:cx-r.left, y:cy-r.top}; }
+        function start(e) { if(e.type==='touchstart')e.preventDefault(); let p=getPos(e); if(mode==='rect'){isDragging=true;startPos=p;rectData={x:p.x,y:p.y,w:0,h:0};}else{polyPoints.push(p);draw();} }
+        function move(e) { if(!isDragging||mode!=='rect')return; if(e.type==='touchmove')e.preventDefault(); let p=getPos(e); rectData.w=p.x-startPos.x; rectData.h=p.y-startPos.y; draw(); }
+        function end() { isDragging=false; }
+        
+        canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', end);
+        canvas.addEventListener('touchstart', start, {passive:false}); canvas.addEventListener('touchmove', move, {passive:false}); canvas.addEventListener('touchend', end);
+        function setMode(m) { mode=m; resetCrop(); document.getElementById('instruction').innerText = mode==='rect'?"拖曳畫出方框":"沿著魚邊緣點擊"; }
+        function resetCrop() { rectData={x:0,y:0,w:0,h:0}; polyPoints=[]; draw(); }
 
         function finishCrop() {
-            let tempCanvas = document.createElement('canvas');
-            let tCtx = tempCanvas.getContext('2d');
-            let scaleRatio = rawImg.width / canvas.width;
-
-            if (mode === 'rect') {
-                if (rectData.w === 0) return alert("請先框選範圍");
-                let finalX = rectData.w > 0 ? rectData.x : rectData.x + rectData.w;
-                let finalY = rectData.h > 0 ? rectData.y : rectData.y + rectData.h;
-                let finalW = Math.abs(rectData.w);
-                let finalH = Math.abs(rectData.h);
-                tempCanvas.width = finalW * scaleRatio;
-                tempCanvas.height = finalH * scaleRatio;
-                tCtx.drawImage(rawImg, finalX * scaleRatio, finalY * scaleRatio, finalW * scaleRatio, finalH * scaleRatio, 0, 0, tempCanvas.width, tempCanvas.height);
+            let tempCanvas = document.createElement('canvas'); let tCtx = tempCanvas.getContext('2d'); let r = rawImg.width/canvas.width;
+            if(mode==='rect'){
+                if(rectData.w===0) return alert("請先框選");
+                let fx=rectData.w>0?rectData.x:rectData.x+rectData.w, fy=rectData.h>0?rectData.y:rectData.y+rectData.h;
+                tempCanvas.width=Math.abs(rectData.w)*r; tempCanvas.height=Math.abs(rectData.h)*r;
+                tCtx.drawImage(rawImg, fx*r, fy*r, tempCanvas.width, tempCanvas.height, 0, 0, tempCanvas.width, tempCanvas.height);
             } else {
-                if (polyPoints.length < 3) return alert("請至少點 3 個點");
-                let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
-                polyPoints.forEach(p => { if(p.x<minX)minX=p.x; if(p.x>maxX)maxX=p.x; if(p.y<minY)minY=p.y; if(p.y>maxY)maxY=p.y; });
-                let w = maxX - minX; let h = maxY - minY;
-                tempCanvas.width = w * scaleRatio; tempCanvas.height = h * scaleRatio;
-                tCtx.beginPath();
-                tCtx.moveTo((polyPoints[0].x - minX) * scaleRatio, (polyPoints[0].y - minY) * scaleRatio);
-                for(let i=1; i<polyPoints.length; i++) tCtx.lineTo((polyPoints[i].x - minX) * scaleRatio, (polyPoints[i].y - minY) * scaleRatio);
-                tCtx.closePath(); tCtx.clip();
-                tCtx.drawImage(rawImg, -minX * scaleRatio, -minY * scaleRatio, rawImg.width, rawImg.height);
+                if(polyPoints.length<3) return alert("請至少點3個點");
+                let minX=Infinity, minY=Infinity, maxX=0, maxY=0; polyPoints.forEach(p=>{if(p.x<minX)minX=p.x;if(p.x>maxX)maxX=p.x;if(p.y<minY)minY=p.y;if(p.y>maxY)maxY=p.y;});
+                tempCanvas.width=(maxX-minX)*r; tempCanvas.height=(maxY-minY)*r;
+                tCtx.beginPath(); tCtx.moveTo((polyPoints[0].x-minX)*r, (polyPoints[0].y-minY)*r);
+                for(let i=1; i<polyPoints.length; i++) tCtx.lineTo((polyPoints[i].x-minX)*r, (polyPoints[i].y-minY)*r);
+                tCtx.closePath(); tCtx.clip(); tCtx.drawImage(rawImg, -minX*r, -minY*r, rawImg.width, rawImg.height);
             }
             
-            // 裁剪完成，進入預覽視窗
-            croppedFishDataURL = tempCanvas.toDataURL(); 
-            openSizePreviewModal(croppedFishDataURL);
-            closeModal();
-        }
-
-        // ==========================================
-        //  大小預覽與調整邏輯
-        // ==========================================
-        const sizePreviewModal = document.getElementById('sizePreviewModal');
-        const fishPreviewImage = document.getElementById('fishPreviewImage');
-        const fishSizeSlider = document.getElementById('fishSizeSlider');
-        const currentFishSizeSpan = document.getElementById('currentFishSize');
-        let finalFishSize = 100;
-
-        function openSizePreviewModal(imgSrc) {
-            fishPreviewImage.src = imgSrc;
-            fishSizeSlider.value = 100; // 重置預設大小
-            updateFishPreview();
-            sizePreviewModal.style.display = 'flex';
-        }
-
-        function updateFishPreview() {
-            finalFishSize = parseInt(fishSizeSlider.value);
-            currentFishSizeSpan.innerText = finalFishSize;
+            let base64 = tempCanvas.toDataURL('image/png', 0.8);
             
-            // 直接調整預覽圖片的寬度
-            fishPreviewImage.style.width = finalFishSize + 'px';
-            // 高度自動，保持比例
-            fishPreviewImage.style.height = 'auto'; 
-        }
-
-        fishSizeSlider.addEventListener('input', updateFishPreview);
-
-        function confirmFishSize() {
-            if (croppedFishDataURL) {
-                createFish(croppedFishDataURL, finalFishSize); 
-                croppedFishDataURL = ''; 
+            // 上傳到當前班級
+            if(dbRef) {
+                document.getElementById('finishBtn').innerText = "上傳中...";
+                dbRef.push({ image: base64, timestamp: Date.now() })
+                    .then(() => { closeModal(); document.getElementById('finishBtn').innerText = "上傳雲端"; })
+                    .catch(err => { alert("上傳失敗"); document.getElementById('finishBtn').innerText = "上傳雲端"; });
             }
-            sizePreviewModal.style.display = 'none';
-        }
-
-        function cancelFishSize() {
-            croppedFishDataURL = '';
-            sizePreviewModal.style.display = 'none';
         }
 
         // ==========================================
-        //  水族箱動畫
+        //  水族箱與魚 (支援刪除功能)
         // ==========================================
         const aquarium = document.getElementById('aquarium');
         const fishes = [];
 
         class Fish {
-            constructor(imgSrc, customSize) {
+            constructor(imgSrc, dbKey) {
+                this.dbKey = dbKey; // 儲存這隻魚在 Firebase 的 ID
                 this.element = document.createElement('img');
                 this.element.src = imgSrc;
                 this.element.className = 'fish';
-                
-                // 使用自定義大小
-                this.size = customSize; 
+                this.size = Math.random() * 80 + 50; 
                 this.element.style.width = this.size + 'px';
+                this.element.style.opacity = '0';
                 
                 this.x = Math.random() * (window.innerWidth - this.size);
                 this.y = Math.random() * (window.innerHeight - this.size);
-                
                 this.vx = (Math.random() - 0.5) * 3;
                 this.vy = (Math.random() - 0.5) * 1.5;
                 if(Math.abs(this.vx) < 0.5) this.vx = 1;
 
+                // 綁定點擊刪除事件
+                this.element.onclick = (e) => {
+                    if(isDeleteMode) {
+                        e.stopPropagation(); // 防止點到後面
+                        let confirmDel = confirm("確定要刪除這隻魚嗎？");
+                        if(confirmDel) {
+                            // 通知 Firebase 刪除此節點
+                            firebase.database().ref('school_aquarium_fish/' + currentClassId + '/' + this.dbKey).remove();
+                        }
+                    }
+                };
+
                 aquarium.appendChild(this.element);
+                setTimeout(() => { this.element.style.opacity = '1'; }, 100);
             }
+
+            updateStyle() {
+                if(isDeleteMode) {
+                    this.element.classList.add('deletable');
+                    this.element.style.cursor = 'pointer';
+                } else {
+                    this.element.classList.remove('deletable');
+                    this.element.style.cursor = 'default';
+                }
+            }
+
             update() {
-                this.x += this.vx;
-                this.y += this.vy;
+                this.x += this.vx; this.y += this.vy;
                 if (this.x <= 0 || this.x + this.size >= window.innerWidth) this.vx *= -1;
                 if (this.y <= 0 || this.y + this.size >= window.innerHeight) this.vy *= -1;
-                
                 let scaleX = this.vx > 0 ? -1 : 1;
                 this.element.style.transform = `translate(${this.x}px, ${this.y}px) scaleX(${scaleX})`;
             }
         }
 
-        function createFish(src, size) {
-            fishes.push(new Fish(src, size));
+        function createFish(src, key) {
+            const f = new Fish(src, key);
+            f.updateStyle(); // 根據當前是否為刪除模式設定樣式
+            fishes.push(f);
         }
 
         function animate() {
