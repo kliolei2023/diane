@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>校園數位共創水族箱 (分班版)</title>
+    <title>校園數位共創水族箱 (介面優化版)</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -36,24 +36,63 @@
             z-index: 2; pointer-events: none;
         }
 
-        /* --- 頂部班級列 --- */
-        #top-bar {
-            position: absolute; top: 0; left: 0; width: 100%; height: 50px;
-            background: rgba(0,0,0,0.6); z-index: 150;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 15px; box-sizing: border-box; color: white;
-        }
-        #class-info { font-size: 18px; font-weight: bold; color: #ffeb3b; display: flex; align-items: center; gap: 10px;}
-        #class-controls { display: flex; gap: 5px; }
-        
-        input.class-input {
-            padding: 5px; border-radius: 4px; border: none; width: 80px; text-align: center;
+        /* --- 1. 左上角智慧導覽區 --- */
+        #top-nav {
+            position: absolute; top: 15px; left: 15px; z-index: 150;
+            display: flex; flex-direction: column; gap: 10px;
+            align-items: flex-start;
         }
 
-        /* --- 左側操作面板 --- */
-        #controls {
-            position: absolute; top: 60px; left: 15px; z-index: 100;
+        /* 班級輸入框區域 (初始顯示) */
+        #class-input-area {
+            background: rgba(0,0,0,0.7);
+            padding: 10px; border-radius: 8px;
+            display: flex; gap: 5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        /* 班級顯示標籤 (輸入後顯示) */
+        #class-display-label {
+            display: none; /* 預設隱藏 */
+            background: rgba(0, 123, 255, 0.9);
+            color: white; padding: 8px 15px; border-radius: 20px;
+            font-size: 16px; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer;
+            align-items: center; gap: 8px;
+        }
+        #class-display-label:hover { background: rgba(0, 123, 255, 1); }
+
+        input.class-input {
+            padding: 8px; border-radius: 4px; border: none; width: 100px; text-align: center; outline: none;
+        }
+
+        /* --- 選單切換按鈕 --- */
+        #menu-toggle-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none; border-radius: 50%; width: 40px; height: 40px;
+            font-size: 20px; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.2s;
+        }
+        #menu-toggle-btn:active { transform: scale(0.9); }
+
+        /* --- 2. 左側操作面板 (容器) --- */
+        #controls-container {
+            margin-top: 10px;
             display: flex; flex-direction: column; gap: 10px;
+            transform-origin: top left;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        
+        /* 隱藏時的狀態 */
+        .controls-hidden {
+            transform: scale(0);
+            opacity: 0;
+            pointer-events: none;
+            height: 0; margin: 0; /* 避免佔位 */
         }
 
         .panel {
@@ -77,7 +116,7 @@
         .btn-gray { background: #6c757d; }
         .btn-purple { background: #6f42c1; }
 
-        /* 刪除模式啟用時的按鈕狀態 */
+        /* 刪除模式按鈕特效 */
         .delete-mode-active {
             background: #dc3545 !important;
             animation: pulse 1s infinite;
@@ -89,18 +128,16 @@
         /* 魚的樣式 */
         .fish { 
             position: absolute; z-index: 10; 
-            cursor: pointer; /* 預設是指標 */
+            cursor: pointer; 
             filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
             transition: opacity 0.5s, filter 0.2s; 
         }
-        
-        /* 刪除模式下的魚 */
         .fish.deletable:hover {
-            filter: drop-shadow(0 0 10px red); /* 被選中時發紅光 */
+            filter: drop-shadow(0 0 10px red); 
             transform: scale(1.1);
         }
 
-        /* --- 裁剪視窗 (Modal) --- */
+        /* Modal */
         #modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 200;
@@ -129,43 +166,44 @@
 <body>
 
     <div id="aquarium">
-        <div id="top-bar">
-            <div id="class-info">
-                <span>班級：</span>
-                <span id="current-class-display">公共大廳</span>
-            </div>
-            <div id="class-controls">
+        <div id="top-nav">
+            <div id="class-input-area">
                 <input type="text" id="classInput" class="class-input" placeholder="輸入班號">
-                <button class="btn btn-blue" style="padding: 5px 10px;" onclick="switchClass()">進入/新增</button>
+                <button class="btn btn-blue" style="padding: 8px 12px;" onclick="switchClass()">進入</button>
+            </div>
+
+            <div id="class-display-label" onclick="showClassInput()">
+                <span id="current-class-text">📍 501 班</span>
+                <span style="font-size:12px; opacity:0.8;">(點擊切換)</span>
+            </div>
+
+            <button id="menu-toggle-btn" onclick="toggleControls()" title="顯示/隱藏選單">☰</button>
+
+            <div id="controls-container">
+                <div class="panel">
+                    <h3>🐟 創作與上傳</h3>
+                    <button class="btn btn-blue" onclick="document.getElementById('fishInput').click()">📸 上傳並裁剪畫作</button>
+                    <input type="file" id="fishInput" accept="image/*" onchange="handleFishFile(this)">
+                </div>
+
+                <div class="panel">
+                    <h3>🛠️ 管理工具</h3>
+                    <button id="deleteModeBtn" class="btn btn-purple" onclick="toggleDeleteMode()">❌ 刪除單隻魚 (關)</button>
+                    <button class="btn btn-red" onclick="clearAllFish()">🗑️ 一鍵清空本班</button>
+                </div>
+
+                <div class="panel">
+                    <h3>🏫 場景設定</h3>
+                    <button class="btn btn-orange" onclick="document.getElementById('bgInput').click()">🖼️ 更換背景</button>
+                    <input type="file" id="bgInput" accept="image/*" onchange="handleBgFile(this)">
+                    <button class="btn btn-gray" onclick="resetBackground()">🌊 恢復深海</button>
+                </div>
             </div>
         </div>
 
         <div id="loading-msg">正在連線至雲端水族箱...</div>
         <img id="bg-image-layer" src="" alt="Background">
         <div id="sand"></div>
-
-        <div id="controls">
-            <div class="panel">
-                <h3>🐟 創作與上傳</h3>
-                <button class="btn btn-blue" onclick="document.getElementById('fishInput').click()">📸 上傳並裁剪畫作</button>
-                <input type="file" id="fishInput" accept="image/*" onchange="handleFishFile(this)">
-            </div>
-
-            <div class="panel">
-                <h3>🛠️ 管理工具</h3>
-                <button id="deleteModeBtn" class="btn btn-purple" onclick="toggleDeleteMode()">❌ 刪除單隻魚 (關)</button>
-                <div style="font-size:12px; color:#666; margin-bottom:5px;">開啟後，點擊魚即可刪除</div>
-                
-                <button class="btn btn-red" onclick="clearAllFish()">🗑️ 一鍵清空本班</button>
-            </div>
-
-            <div class="panel">
-                <h3>🏫 場景設定</h3>
-                <button class="btn btn-orange" onclick="document.getElementById('bgInput').click()">🖼️ 更換背景</button>
-                <input type="file" id="bgInput" accept="image/*" onchange="handleBgFile(this)">
-                <button class="btn btn-gray" onclick="resetBackground()">🌊 恢復深海</button>
-            </div>
-        </div>
     </div>
 
     <div id="modal">
@@ -200,85 +238,94 @@
         };
 
         let dbRef = null;
-        let currentClassId = "Lobby"; // 預設班級 ID
-        let isDeleteMode = false;     // 刪除模式狀態
+        let currentClassId = "Lobby"; 
+        let isDeleteMode = false;
+        let isControlsVisible = true;
 
-        // 初始化 Firebase
         try {
             firebase.initializeApp(firebaseConfig);
-            initClassRoom(currentClassId); // 啟動預設班級
+            // 預設進入大廳，但我們這次先不載入，等待用戶輸入或顯示輸入框
+            // initClassRoom("Lobby"); 
+            // 為了方便，預設顯示大廳，輸入框保持開啟
+            initClassRoom("Lobby");
         } catch (e) {
-            console.error("Firebase Init Error:", e);
-            document.getElementById('loading-msg').innerText = "連線失敗";
+            console.error(e);
         }
 
         // ==========================================
-        //  班級管理核心邏輯
+        //  介面控制邏輯 (新功能)
         // ==========================================
         
-        // 切換班級
         function switchClass() {
             const inputVal = document.getElementById('classInput').value.trim();
             if(!inputVal) return alert("請輸入班級名稱！");
             
-            // 避免特殊字元造成路徑錯誤
-            const safeClassId = inputVal.replace(/[.#$/[\]]/g, "_"); 
-            
+            const safeClassId = inputVal.replace(/[.#$/[\]]/g, "_");
             initClassRoom(safeClassId);
-            document.getElementById('classInput').value = ''; // 清空輸入框
+            
+            // UI 切換：隱藏輸入框，顯示標籤
+            document.getElementById('class-input-area').style.display = 'none';
+            const label = document.getElementById('class-display-label');
+            label.style.display = 'flex';
+            document.getElementById('current-class-text').innerText = `📍 ${safeClassId} 班`;
+            
+            // 清空輸入框
+            document.getElementById('classInput').value = '';
         }
 
-        // 初始化/連接到指定班級
-        function initClassRoom(classId) {
-            // 1. 如果之前有連線，先斷開舊的監聽
-            if (dbRef) {
-                dbRef.off(); 
-            }
+        function showClassInput() {
+            // 點擊標籤後，切換回輸入框模式
+            document.getElementById('class-display-label').style.display = 'none';
+            document.getElementById('class-input-area').style.display = 'flex';
+        }
 
-            // 2. 清空畫面上的魚
+        function toggleControls() {
+            const container = document.getElementById('controls-container');
+            isControlsVisible = !isControlsVisible;
+            if (isControlsVisible) {
+                container.classList.remove('controls-hidden');
+            } else {
+                container.classList.add('controls-hidden');
+            }
+        }
+
+        // ==========================================
+        //  Firebase 邏輯
+        // ==========================================
+        function initClassRoom(classId) {
+            if (dbRef) dbRef.off(); 
+            
             const allFishes = document.querySelectorAll('.fish');
             allFishes.forEach(f => f.remove());
-            fishes.length = 0; // 清空陣列
+            fishes.length = 0;
 
-            // 3. 更新狀態
             currentClassId = classId;
-            document.getElementById('current-class-display').innerText = classId === "Lobby" ? "公共大廳" : classId + " 班";
             document.getElementById('loading-msg').style.display = 'block';
             document.getElementById('loading-msg').innerText = `正在載入 ${classId} 的水族箱...`;
 
-            // 4. 重新連接資料庫路徑： school_aquarium_fish / 班級ID
             dbRef = firebase.database().ref('school_aquarium_fish/' + classId);
 
-            // 5. 監聽：新增魚
             dbRef.on('child_added', (snapshot) => {
                 const data = snapshot.val();
-                const key = snapshot.key; // 取得這隻魚的唯一 ID
+                const key = snapshot.key;
                 if(data && data.image) {
                     createFish(data.image, key); 
                 }
                 document.getElementById('loading-msg').style.display = 'none';
             });
 
-            // 6. 監聽：刪除魚 (當有人刪除時，同步移除畫面上的魚)
             dbRef.on('child_removed', (snapshot) => {
-                const key = snapshot.key;
-                removeFishFromScreen(key);
+                removeFishFromScreen(snapshot.key);
             });
         }
 
-        // 清空全班功能
         function clearAllFish() {
             if(!dbRef) return;
-            let confirmClear = confirm(`⚠️ 警告！\n\n您確定要清空【${currentClassId}】所有的魚嗎？\n此動作無法復原！`);
-            if(confirmClear) {
-                // 直接移除該班級節點下的所有資料
-                dbRef.remove()
-                    .then(() => alert("水族箱已清空！"))
-                    .catch(err => alert("清空失敗：" + err.message));
+            if(confirm(`⚠️ 確定要清空【${currentClassId}】所有的魚嗎？`)) {
+                dbRef.remove();
             }
         }
 
-        // 刪除模式切換
         function toggleDeleteMode() {
             isDeleteMode = !isDeleteMode;
             const btn = document.getElementById('deleteModeBtn');
@@ -287,32 +334,26 @@
             if(isDeleteMode) {
                 btn.innerText = "✅ 結束刪除模式";
                 btn.classList.add('delete-mode-active');
-                aquariumDiv.style.cursor = "crosshair"; // 游標變成準心
-                alert("進入刪除模式！\n\n現在點擊畫面上的魚，該隻魚就會被永久刪除。");
+                aquariumDiv.style.cursor = "crosshair";
+                alert("進入刪除模式！點擊魚即可刪除。");
             } else {
                 btn.innerText = "❌ 刪除單隻魚 (關)";
                 btn.classList.remove('delete-mode-active');
                 aquariumDiv.style.cursor = "default";
             }
-            
-            // 更新所有魚的狀態樣式
             fishes.forEach(fish => fish.updateStyle());
         }
 
-        // 從畫面移除魚 (被動接收資料庫指令)
         function removeFishFromScreen(key) {
-            // 從陣列中找到這隻魚
             const index = fishes.findIndex(f => f.dbKey === key);
             if(index !== -1) {
-                // 移除 DOM 元素
                 if(fishes[index].element) fishes[index].element.remove();
-                // 從陣列移除
                 fishes.splice(index, 1);
             }
         }
 
         // ==========================================
-        //  圖片處理與變數
+        //  圖片處理
         // ==========================================
         let canvas = document.getElementById('editor');
         let ctx = canvas.getContext('2d');
@@ -327,9 +368,8 @@
             if (input.files && input.files[0]) {
                 let reader = new FileReader();
                 reader.onload = function(e) {
-                    const bgLayer = document.getElementById('bg-image-layer');
-                    bgLayer.src = e.target.result;
-                    bgLayer.style.opacity = 1;
+                    document.getElementById('bg-image-layer').src = e.target.result;
+                    document.getElementById('bg-image-layer').style.opacity = 1;
                 }
                 reader.readAsDataURL(input.files[0]);
             }
@@ -407,7 +447,6 @@
             
             let base64 = tempCanvas.toDataURL('image/png', 0.8);
             
-            // 上傳到當前班級
             if(dbRef) {
                 document.getElementById('finishBtn').innerText = "上傳中...";
                 dbRef.push({ image: base64, timestamp: Date.now() })
@@ -416,15 +455,11 @@
             }
         }
 
-        // ==========================================
-        //  水族箱與魚 (支援刪除功能)
-        // ==========================================
         const aquarium = document.getElementById('aquarium');
         const fishes = [];
-
         class Fish {
             constructor(imgSrc, dbKey) {
-                this.dbKey = dbKey; // 儲存這隻魚在 Firebase 的 ID
+                this.dbKey = dbKey; 
                 this.element = document.createElement('img');
                 this.element.src = imgSrc;
                 this.element.className = 'fish';
@@ -438,13 +473,10 @@
                 this.vy = (Math.random() - 0.5) * 1.5;
                 if(Math.abs(this.vx) < 0.5) this.vx = 1;
 
-                // 綁定點擊刪除事件
                 this.element.onclick = (e) => {
                     if(isDeleteMode) {
-                        e.stopPropagation(); // 防止點到後面
-                        let confirmDel = confirm("確定要刪除這隻魚嗎？");
-                        if(confirmDel) {
-                            // 通知 Firebase 刪除此節點
+                        e.stopPropagation();
+                        if(confirm("確定要刪除這隻魚嗎？")) {
                             firebase.database().ref('school_aquarium_fish/' + currentClassId + '/' + this.dbKey).remove();
                         }
                     }
@@ -453,7 +485,6 @@
                 aquarium.appendChild(this.element);
                 setTimeout(() => { this.element.style.opacity = '1'; }, 100);
             }
-
             updateStyle() {
                 if(isDeleteMode) {
                     this.element.classList.add('deletable');
@@ -463,7 +494,6 @@
                     this.element.style.cursor = 'default';
                 }
             }
-
             update() {
                 this.x += this.vx; this.y += this.vy;
                 if (this.x <= 0 || this.x + this.size >= window.innerWidth) this.vx *= -1;
@@ -475,7 +505,7 @@
 
         function createFish(src, key) {
             const f = new Fish(src, key);
-            f.updateStyle(); // 根據當前是否為刪除模式設定樣式
+            f.updateStyle();
             fishes.push(f);
         }
 
@@ -484,7 +514,6 @@
             requestAnimationFrame(animate);
         }
         animate();
-
     </script>
 </body>
 </html>
