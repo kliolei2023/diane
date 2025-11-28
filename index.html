@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>校園數位共創水族箱 (兩階段預覽版)</title>
+    <title>校園數位共創水族箱 (完美流程版)</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -12,173 +12,80 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #222; font-family: "Microsoft JhengHei", sans-serif; }
         
         #aquarium {
-            width: 100%; height: 100%;
-            position: relative; overflow: hidden;
+            width: 100%; height: 100%; position: relative; overflow: hidden;
             background: linear-gradient(180deg,#4facfe 0%, #00f2fe 100%);
-            background-size: cover; background-position: center;
-            transition: background 0.5s ease;
+            background-size: cover; background-position: center; transition: background 0.5s ease;
         }
+        #bg-image-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.5s; z-index: 0; pointer-events: none; }
+        #sand { position: absolute; bottom: 0; width: 100%; height: 80px; background: #e6d99c; border-top: 5px solid #d4c585; z-index: 2; pointer-events: none; transition: opacity 0.5s; }
 
-        #bg-image-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover; opacity: 0; transition: opacity 0.5s;
-            z-index: 0; pointer-events: none;
-        }
-
-        #sand {
-            position: absolute; bottom: 0; width: 100%; height: 80px;
-            background: #e6d99c; border-top: 5px solid #d4c585; 
-            z-index: 2; pointer-events: none;
-            transition: opacity 0.5s;
-        }
-
-        /* --- 1. 頂部班級列表 --- */
-        #class-list-bar {
-            position: absolute; top: 0; left: 0; width: 100%; height: 50px;
-            background: rgba(0,0,0,0.5); z-index: 140;
-            display: flex; align-items: center; 
-            padding-left: 10px; padding-right: 10px;
-            overflow-x: auto; white-space: nowrap; gap: 8px;
-        }
+        /* --- UI 元件 --- */
+        #class-list-bar { position: absolute; top: 0; left: 0; width: 100%; height: 50px; background: rgba(0,0,0,0.5); z-index: 140; display: flex; align-items: center; padding: 0 10px; overflow-x: auto; white-space: nowrap; gap: 8px; }
         #class-list-bar::-webkit-scrollbar { display: none; }
-
-        .lobby-btn {
-            background: linear-gradient(45deg, #FFD700, #FFA500);
-            color: #333; font-weight: bold; padding: 6px 15px; border-radius: 20px;
-            font-size: 14px; cursor: pointer; border: 2px solid #fff;
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-            display: flex; align-items: center; gap: 5px;
-        }
-        .lobby-btn:hover { transform: scale(1.05); }
-
-        .class-tag {
-            background: rgba(255, 255, 255, 0.2);
-            color: white; padding: 5px 12px; border-radius: 15px;
-            font-size: 14px; cursor: pointer; border: 1px solid rgba(255,255,255,0.3);
-            transition: 0.2s;
-        }
-        .class-tag:hover { background: rgba(255, 255, 255, 0.5); }
+        .lobby-btn { background: linear-gradient(45deg, #FFD700, #FFA500); color: #333; font-weight: bold; padding: 6px 15px; border-radius: 20px; font-size: 14px; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 10px rgba(255,215,0,0.5); display: flex; align-items: center; gap: 5px; }
+        .class-tag { background: rgba(255,255,255,0.2); color: white; padding: 5px 12px; border-radius: 15px; font-size: 14px; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); transition: 0.2s; }
         .class-tag.active { background: #007bff; border-color: #007bff; box-shadow: 0 0 10px #007bff; }
 
-        /* --- 2. 左上角操作區 --- */
-        #top-nav {
-            position: absolute; top: 60px; left: 15px; z-index: 150;
-            display: flex; flex-direction: column; gap: 10px;
-            align-items: flex-start;
-        }
+        #top-nav { position: absolute; top: 60px; left: 15px; z-index: 150; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+        #class-input-area, #class-management-area { background: rgba(0,0,0,0.7); padding: 8px; border-radius: 8px; display: flex; gap: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        #class-management-area { display: none; align-items: center; }
+        #class-label-btn { background: rgba(0,123,255,0.9); color: white; padding: 8px 15px; border-radius: 20px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        input.class-input { padding: 5px; border-radius: 4px; border: none; width: 90px; text-align: center; outline: none; }
+        #menu-toggle-btn { background: rgba(255,255,255,0.9); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
 
-        #class-input-area {
-            background: rgba(0,0,0,0.7); padding: 8px; border-radius: 8px;
-            display: flex; gap: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        #class-management-area {
-            display: none; align-items: center; gap: 5px;
-        }
-
-        #class-label-btn {
-            background: rgba(0, 123, 255, 0.9); color: white; padding: 8px 15px; border-radius: 20px;
-            font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            cursor: pointer; display: flex; align-items: center; gap: 5px;
-        }
-
-        input.class-input {
-            padding: 5px; border-radius: 4px; border: none; width: 90px; text-align: center; outline: none;
-        }
-
-        #menu-toggle-btn {
-            background: rgba(255, 255, 255, 0.9); border: none; border-radius: 50%; width: 40px; height: 40px;
-            font-size: 20px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        /* --- 左側面板 --- */
-        #controls-container {
-            margin-top: 5px; display: flex; flex-direction: column; gap: 10px;
-            transform-origin: top left; transition: transform 0.3s, opacity 0.3s;
-        }
+        #controls-container { margin-top: 5px; display: flex; flex-direction: column; gap: 10px; transform-origin: top left; transition: transform 0.3s, opacity 0.3s; }
         .controls-hidden { transform: scale(0); opacity: 0; pointer-events: none; height: 0; }
-
-        .panel {
-            background: rgba(255,255,255,0.95); padding: 12px; border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            display: flex; flex-direction: column; gap: 8px; width: 180px;
-        }
-
+        .panel { background: rgba(255,255,255,0.95); padding: 12px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 8px; width: 180px; }
         h3 { margin: 0 0 5px 0; font-size: 16px; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
         
-        .btn { border: none; padding: 8px; border-radius: 6px; font-size: 14px; cursor: pointer; color: white; text-align: center; font-weight: bold; }
-        .btn-blue { background: #007bff; }
-        .btn-orange { background: #fd7e14; }
-        .btn-red { background: #dc3545; }
-        .btn-gray { background: #6c757d; }
-        .btn-purple { background: #6f42c1; }
-        .btn-gold { background: #ffc107; color: #333; }
-        .btn-green { background: #28a745; }
+        .btn { border: none; padding: 8px; border-radius: 6px; font-size: 14px; cursor: pointer; color: white; text-align: center; font-weight: bold; transition: 0.2s; }
+        .btn:active { transform: scale(0.96); }
+        .btn-blue { background: #007bff; } .btn-orange { background: #fd7e14; } .btn-red { background: #dc3545; }
+        .btn-gray { background: #6c757d; } .btn-purple { background: #6f42c1; } .btn-gold { background: #ffc107; color: #333; } .btn-green { background: #28a745; }
         .btn-sm { padding: 4px 8px; font-size: 12px; }
-
         .delete-mode-active { background: #dc3545 !important; animation: pulse-red 1s infinite; }
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
-
         .submit-mode-active { background: #ffc107 !important; color:black; animation: pulse-gold 1s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
         @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); } }
 
         input[type="file"] { display: none; }
-
-        .fish-container {
-            position: absolute; z-index: 10; display: flex; flex-direction: column; align-items: center; pointer-events: auto; transition: opacity 0.5s;
-        }
+        .fish-container { position: absolute; z-index: 10; display: flex; flex-direction: column; align-items: center; pointer-events: auto; transition: opacity 0.5s; }
         .fish-img { filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3)); transition: filter 0.2s; }
-        .fish-name-label {
-            color: white; font-size: 13px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
-            margin-bottom: 4px; white-space: nowrap; padding: 2px 6px; background: rgba(0,0,0,0.3); border-radius: 10px;
-        }
+        .fish-name-label { color: white; font-size: 13px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.9); margin-bottom: 4px; white-space: nowrap; padding: 2px 6px; background: rgba(0,0,0,0.3); border-radius: 10px; }
         .fish-container.deletable .fish-img:hover { filter: drop-shadow(0 0 10px red); transform: scale(1.1); }
         .fish-container.submittable .fish-img:hover { filter: drop-shadow(0 0 15px gold); transform: scale(1.2); }
         .fish-container.has-author { cursor: help; }
 
-        /* --- Modal 與 階段式介面 --- */
-        #modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; display: none; flex-direction: column;
-        }
+        /* --- 模態視窗與兩階段佈局 --- */
+        #modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; display: none; flex-direction: column; }
         
-        /* 階段 1: 裁剪區 */
-        #phase-crop-container {
-            flex: 1; display: flex; flex-direction: column; width: 100%; height: 100%;
-        }
-        #canvas-wrapper { 
-            flex: 1; display: flex; align-items: center; justify-content: center; 
-            overflow: hidden; position: relative; touch-action: none; background: #111;
-        }
+        /* 階段 1: 裁剪 */
+        #step1-crop { flex: 1; display: flex; flex-direction: column; width: 100%; height: 100%; }
+        #canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; touch-action: none; background: #111; }
         canvas { box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        #toolbar-crop {
-            height: 80px; background: #333; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px; color: white; border-top: 1px solid #555;
-        }
+        #crop-toolbar { height: 70px; background: #333; display: flex; align-items: center; justify-content: center; gap: 15px; padding: 10px; color: white; border-top: 1px solid #555; }
 
-        /* 階段 2: 預覽大小區 */
-        #phase-size-container {
-            display: none; /* 預設隱藏 */
-            flex: 1; flex-direction: column; width: 100%; height: 100%;
-            align-items: center; justify-content: center;
-        }
-        /* 真實預覽盒 (全螢幕模擬) */
-        #size-preview-viewport {
-            width: 100%; flex: 1;
-            background-color: #222; background-size: cover; background-position: center;
-            position: relative; overflow: hidden;
-            display: flex; align-items: center; justify-content: center;
-        }
-        #preview-fish-final {
-            transition: width 0.1s; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));
-        }
-        #toolbar-size {
-            height: 100px; width: 100%; background: #333; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 10px; color: white; border-top: 1px solid #555;
-        }
+        /* 階段 2: 預覽 */
+        #step2-preview { display: none; flex: 1; flex-direction: column; width: 100%; height: 100%; }
+        #preview-viewport { flex: 1; width: 100%; background-color: #222; background-size: cover; background-position: center; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        #preview-fish-final { max-width: none; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5)); transition: width 0.1s; }
+        #preview-toolbar { height: 100px; background: #333; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 10px; color: white; border-top: 1px solid #555; }
 
         .radio-group { display: flex; gap: 10px; background: #555; padding: 5px 15px; border-radius: 20px; }
         .radio-group label { cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 14px; color: white;}
-        input[type=range] { width: 200px; accent-color: #007bff; }
-        
+        input[type=range] { width: 250px; accent-color: #007bff; }
+
+        /* 對話框 */
+        #custom-dialog-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); z-index: 9999; display: none; align-items: center; justify-content: center; }
+        #custom-dialog-box { background: rgba(30,30,30,0.85); color: white; width: 85%; max-width: 320px; padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; animation: popIn 0.3s ease; }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        #dialog-title { font-size: 18px; margin: 0 0 10px 0; font-weight: bold; color: #ffeb3b; }
+        #dialog-msg { font-size: 15px; margin-bottom: 20px; line-height: 1.5; color: #eee; }
+        #dialog-input { width: 90%; padding: 10px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #555; background: rgba(255,255,255,0.1); color: white; font-size: 16px; text-align: center; outline: none; display: none; }
+        #dialog-buttons { display: flex; gap: 10px; justify-content: center; }
+        .dialog-btn { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
+        #btn-confirm { background: #007bff; color: white; } #btn-cancel { background: #555; color: white; }
+
         #loading-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 5; pointer-events: none; }
     </style>
 </head>
@@ -196,7 +103,6 @@
                 <input type="text" id="classInput" class="class-input" placeholder="輸入班號">
                 <button class="btn btn-blue" style="padding: 5px 10px;" onclick="switchClass()">進入/新增</button>
             </div>
-
             <div id="class-management-area">
                 <div id="class-label-btn" onclick="showClassInput()" title="點擊切換其他班級">
                     <span id="current-class-text">📍 501 班</span>
@@ -204,7 +110,6 @@
                 <button class="btn btn-orange btn-sm" onclick="renameCurrentClass()" title="修改班級名稱">✏️</button>
                 <button class="btn btn-red btn-sm" onclick="deleteCurrentClass()" title="刪除整個班級">❌</button>
             </div>
-
             <button id="menu-toggle-btn" onclick="toggleControls()" title="顯示/隱藏選單">☰</button>
 
             <div id="controls-container">
@@ -213,17 +118,15 @@
                     <button class="btn btn-blue" onclick="document.getElementById('fishInput').click()">📸 上傳並裁剪畫作</button>
                     <input type="file" id="fishInput" accept="image/*" onchange="handleFishFile(this)">
                 </div>
-
                 <div class="panel">
                     <h3>🛠️ 管理工具</h3>
                     <button id="submitModeBtn" class="btn btn-gold" onclick="toggleSubmitMode()">🏆 投稿優秀作品 (關)</button>
                     <button id="deleteModeBtn" class="btn btn-purple" onclick="toggleDeleteMode()">❌ 刪除單隻魚 (關)</button>
                     <button class="btn btn-red" onclick="clearAllFish()">🗑️ 清空魚缸(保留班級)</button>
                 </div>
-
                 <div class="panel">
                     <h3>🏫 場景設定</h3>
-                    <button class="btn btn-orange" onclick="document.getElementById('bgInput').click()">🖼️ 上傳背景(自動定框)</button>
+                    <button class="btn btn-orange" onclick="document.getElementById('bgInput').click()">🖼️ 上傳背景(固定框)</button>
                     <input type="file" id="bgInput" accept="image/*" onchange="handleBgFile(this)">
                     <button class="btn btn-gray" onclick="resetBackground()">🌊 恢復深海</button>
                 </div>
@@ -235,43 +138,55 @@
         <div id="sand"></div>
     </div>
 
+    <div id="custom-dialog-overlay">
+        <div id="custom-dialog-box">
+            <div id="dialog-title">提示</div>
+            <div id="dialog-msg">訊息內容</div>
+            <input type="text" id="dialog-input">
+            <div id="dialog-buttons">
+                <button class="dialog-btn" id="btn-cancel">取消</button>
+                <button class="dialog-btn" id="btn-confirm">確定</button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal">
-        
-        <div id="phase-crop-container">
+        <div id="step1-crop">
             <div id="canvas-wrapper">
                 <canvas id="editor"></canvas>
-                <div style="position:absolute; bottom:10px; color:rgba(255,255,255,0.7); font-size:14px; text-shadow:0 1px 2px black;" id="instruction">拖曳畫出方框</div>
+                <div style="position:absolute; bottom:10px; color:rgba(255,255,255,0.7); font-size:14px; text-shadow:0 1px 2px black;" id="instruction"></div>
             </div>
-            <div id="toolbar-crop">
-                <div class="radio-group" id="crop-mode-group">
+            <div id="crop-toolbar">
+                <div class="radio-group" id="crop-mode-selector">
                     <label><input type="radio" name="mode" value="rect" checked onclick="setMode('rect')"> 🟦 方形</label>
                     <label><input type="radio" name="mode" value="poly" onclick="setMode('poly')"> ✂️ 描邊</label>
                 </div>
-                <button class="btn btn-blue" id="nextStepBtn" onclick="goToSizePreview()">下一步：調整大小 ➡</button>
-                <button class="btn btn-green" id="directUploadBtn" style="display:none;" onclick="finishUploadBg()">確定更換背景</button>
+                <button class="btn btn-blue" id="nextStepBtn" onclick="goToStep2()">下一步：調整大小 ➡</button>
+                <button class="btn btn-green" id="directBgUploadBtn" style="display:none;" onclick="finishUploadBg()">確定更換背景</button>
                 <button class="btn btn-gray" onclick="closeModal()">取消</button>
             </div>
         </div>
 
-        <div id="phase-size-container">
-            <div id="size-preview-viewport">
-                <img id="preview-fish-final" src="" alt="Fish Preview">
-                <div style="position:absolute; top:10px; left:10px; color:rgba(255,255,255,0.6);">預覽模式 (模擬真實環境)</div>
+        <div id="step2-preview">
+            <div id="preview-viewport">
+                <img id="preview-fish-final" src="">
+                <div style="position:absolute; top:15px; left:15px; color:rgba(255,255,255,0.8); font-size:14px; background:rgba(0,0,0,0.5); padding:5px 10px; border-radius:20px;">
+                    👁️ 真實環境模擬
+                </div>
             </div>
-            <div id="toolbar-size">
-                <div style="display:flex; align-items:center; gap:10px;">
+            <div id="preview-toolbar">
+                <div style="display:flex; align-items:center; gap:10px; width:90%; justify-content:center;">
                     <span style="font-size:14px;">調整大小:</span>
                     <span style="font-size:12px;">小</span>
                     <input type="range" id="sizeSlider" min="30" max="300" value="100" oninput="updateFinalPreview(this.value)">
                     <span style="font-size:12px;">大</span>
                 </div>
                 <div style="display:flex; gap:10px;">
-                    <button class="btn btn-gray" onclick="backToCrop()">⬅ 上一步</button>
-                    <button class="btn btn-green" id="finishBtn" onclick="uploadFishData()">✅ 確定放入水族箱</button>
+                    <button class="btn btn-gray" onclick="backToStep1()">⬅ 上一步</button>
+                    <button class="btn btn-green" id="finishUploadBtn" onclick="finalUploadFish()">✅ 確定放入水族箱</button>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
@@ -287,13 +202,37 @@
         };
 
         let dbRef = null; let rootRef = null; let bgRef = null; let currentClassId = "Lobby"; 
-        let isDeleteMode = false; let isSubmitMode = false;
-        let currentUploadType = 'fish'; // 'fish' or 'bg'
-        let currentBgUrl = ""; // 用於預覽背景
+        let isDeleteMode = false; let isSubmitMode = false; let isControlsVisible = true;
+        let currentUploadType = 'fish'; 
+        let currentBgUrl = "";
+        let tempCroppedFishData = null; // 暫存步驟1的結果
 
-        // 暫存裁剪後的圖片資料 (base64)
-        let tempCroppedImageData = null;
+        // --- Dialog System ---
+        function showDialog(title, msg, type = 'alert', placeholder = '') {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('custom-dialog-overlay');
+                const titleEl = document.getElementById('dialog-title');
+                const msgEl = document.getElementById('dialog-msg');
+                const inputEl = document.getElementById('dialog-input');
+                const btnConfirm = document.getElementById('btn-confirm');
+                const btnCancel = document.getElementById('btn-cancel');
 
+                titleEl.innerText = title; msgEl.innerText = msg; inputEl.value = '';
+                inputEl.style.display = 'none'; btnCancel.style.display = 'none';
+                if (type === 'prompt') { inputEl.style.display = 'block'; inputEl.value = placeholder; btnCancel.style.display = 'block'; }
+                else if (type === 'confirm') { btnCancel.style.display = 'block'; }
+
+                overlay.style.display = 'flex'; if(type === 'prompt') inputEl.focus();
+                const close = () => { overlay.style.display = 'none'; btnConfirm.onclick = null; btnCancel.onclick = null; };
+                btnConfirm.onclick = () => { close(); if (type === 'prompt') resolve(inputEl.value); else resolve(true); };
+                btnCancel.onclick = () => { close(); resolve(false); };
+            });
+        }
+        async function customAlert(msg) { await showDialog("提示", msg, 'alert'); }
+        async function customConfirm(msg) { return await showDialog("確認", msg, 'confirm'); }
+        async function customPrompt(msg, placeholder = "") { const res = await showDialog("輸入", msg, 'prompt', placeholder); return res === false ? null : res; }
+
+        // --- Main Logic ---
         try {
             firebase.initializeApp(firebaseConfig);
             rootRef = firebase.database().ref('school_aquarium_fish');
@@ -308,8 +247,7 @@
                 snapshot.forEach((childSnapshot) => {
                     const className = childSnapshot.key;
                     if (className !== "Lobby") {
-                        const tag = document.createElement('div');
-                        tag.className = 'class-tag';
+                        const tag = document.createElement('div'); tag.className = 'class-tag';
                         if(className === currentClassId) tag.classList.add('active');
                         tag.innerText = className;
                         tag.onclick = () => { document.getElementById('classInput').value = className; switchClass(); };
@@ -319,9 +257,9 @@
             });
         }
 
-        function switchClass() {
+        async function switchClass() {
             let inputVal = document.getElementById('classInput').value.trim();
-            if(!inputVal) return alert("請輸入班級名稱！");
+            if(!inputVal) { await customAlert("請輸入班級名稱！"); return; }
             if(inputVal === "Lobby") return initClassRoom("Lobby");
             const safeClassId = inputVal.replace(/[.#$/[\]]/g, "_");
             initClassRoom(safeClassId);
@@ -331,26 +269,20 @@
             document.getElementById('classInput').value = '';
             updateClassHighlight(safeClassId);
         }
+        function showClassInput() { document.getElementById('class-management-area').style.display = 'none'; document.getElementById('class-input-area').style.display = 'flex'; }
+        function updateClassHighlight(className) { document.querySelectorAll('.class-tag').forEach(t => t.classList.remove('active')); Array.from(document.querySelectorAll('.class-tag')).forEach(t => { if(t.innerText === className) t.classList.add('active'); }); }
 
-        function showClassInput() {
-            document.getElementById('class-management-area').style.display = 'none';
-            document.getElementById('class-input-area').style.display = 'flex';
-        }
-        function updateClassHighlight(className) {
-             document.querySelectorAll('.class-tag').forEach(t => t.classList.remove('active'));
-             Array.from(document.querySelectorAll('.class-tag')).forEach(t => { if(t.innerText === className) t.classList.add('active'); });
-        }
-        function deleteCurrentClass() {
-            if(currentClassId === "Lobby") return alert("大廳不能刪除！");
-            if(confirm(`⚠️ 警告！\n\n您即將刪除【${currentClassId}】整個班級。\n確定嗎？`)) {
+        async function deleteCurrentClass() {
+            if(currentClassId === "Lobby") { await customAlert("大廳不能刪除！"); return; }
+            if(await customConfirm(`⚠️ 警告！\n\n您即將刪除【${currentClassId}】整個班級。\n確定嗎？`)) {
                 firebase.database().ref('school_aquarium_fish/' + currentClassId).remove();
                 firebase.database().ref('school_aquarium_bg/' + currentClassId).remove()
-                .then(() => { alert("班級已刪除，返回大廳。"); initClassRoom("Lobby"); showClassInput(); });
+                .then(async () => { await customAlert("班級已刪除，返回大廳。"); initClassRoom("Lobby"); showClassInput(); });
             }
         }
-        function renameCurrentClass() {
-            if(currentClassId === "Lobby") return alert("大廳不能改名！");
-            let newName = prompt(`請輸入【${currentClassId}】的新名稱：`, currentClassId);
+        async function renameCurrentClass() {
+            if(currentClassId === "Lobby") { await customAlert("大廳不能改名！"); return; }
+            let newName = await customPrompt(`請輸入【${currentClassId}】的新名稱：`, currentClassId);
             if(newName && newName !== currentClassId) {
                 let safeNewName = newName.replace(/[.#$/[\]]/g, "_");
                 dbRef.once('value').then(snapshot => {
@@ -364,7 +296,7 @@
                         .then(() => firebase.database().ref('school_aquarium_bg/' + currentClassId).remove());
                     }
                 });
-                alert(`改名成功！請重新進入 ${safeNewName}`); initClassRoom("Lobby"); showClassInput();
+                await customAlert(`改名成功！請重新進入 ${safeNewName}`); initClassRoom("Lobby"); showClassInput();
             }
         }
 
@@ -395,7 +327,6 @@
                 const bgLayer = document.getElementById('bg-image-layer');
                 const sandLayer = document.getElementById('sand');
                 let defaultBg = "linear-gradient(180deg,#4facfe 0%, #00f2fe 100%)";
-
                 if (bgData && bgData.image) {
                     bgLayer.src = bgData.image; bgLayer.style.opacity = 1; sandLayer.style.opacity = 0;
                     currentBgUrl = `url(${bgData.image})`;
@@ -408,16 +339,16 @@
         }
 
         function resetModes() { isDeleteMode = false; isSubmitMode = false; updateModeButtons(); document.getElementById('aquarium').style.cursor = "default"; }
-        function clearAllFish() {
-            if(!dbRef) return; if(currentClassId === "Lobby") return alert("大廳不能一鍵清空！");
-            if(confirm(`⚠️ 確定要清空魚嗎？(背景會保留)`)) dbRef.remove();
+        async function clearAllFish() {
+            if(!dbRef) return; if(currentClassId === "Lobby") { await customAlert("大廳不能一鍵清空！"); return; }
+            if(await customConfirm(`⚠️ 確定要清空魚嗎？(背景會保留)`)) dbRef.remove();
         }
-        function resetBackground() { if(confirm("確定要恢復預設深海背景嗎？")) firebase.database().ref('school_aquarium_bg/' + currentClassId).remove(); }
+        async function resetBackground() { if(await customConfirm("確定要恢復預設深海背景嗎？")) firebase.database().ref('school_aquarium_bg/' + currentClassId).remove(); }
         function toggleDeleteMode() { if(isSubmitMode) toggleSubmitMode(); isDeleteMode = !isDeleteMode; updateModeButtons(); }
-        function toggleSubmitMode() { 
-            if(currentClassId === "Lobby") return alert("請到各班級投稿！");
+        async function toggleSubmitMode() { 
+            if(currentClassId === "Lobby") { await customAlert("請到各班級投稿！"); return; }
             if(isDeleteMode) toggleDeleteMode(); isSubmitMode = !isSubmitMode; updateModeButtons();
-            if(isSubmitMode) alert("✨ 進入投稿模式！點擊魚即可投稿。");
+            if(isSubmitMode) await customAlert("✨ 進入投稿模式！\n\n點擊魚即可輸入作者姓名並投稿。");
         }
         function updateModeButtons() {
             const delBtn = document.getElementById('deleteModeBtn'); const subBtn = document.getElementById('submitModeBtn'); const aqua = document.getElementById('aquarium');
@@ -433,162 +364,85 @@
         let mode = 'rect'; let isDragging = false; let startPos = {x:0, y:0}; let rectData = {x:0, y:0, w:0, h:0}; let polyPoints = [];
 
         function toggleControls() {
-            const container = document.getElementById('controls-container'); 
-            const isHidden = container.classList.contains('controls-hidden');
-            container.classList.toggle('controls-hidden', !isHidden);
+            const container = document.getElementById('controls-container'); container.classList.toggle('controls-hidden');
         }
-
         function handleFishFile(input) {
             if (input.files && input.files[0]) {
-                currentUploadType = 'fish';
-                let reader = new FileReader();
+                currentUploadType = 'fish'; let reader = new FileReader();
                 reader.onload = function(e) { rawImg.onload = function() { openModal(); }; rawImg.src = e.target.result; };
                 reader.readAsDataURL(input.files[0]);
             }
             input.value = '';
         }
-
         function handleBgFile(input) {
             if (input.files && input.files[0]) {
-                currentUploadType = 'bg';
-                let reader = new FileReader();
+                currentUploadType = 'bg'; let reader = new FileReader();
                 reader.onload = function(e) { rawImg.onload = function() { openModal(); }; rawImg.src = e.target.result; };
                 reader.readAsDataURL(input.files[0]);
             }
             input.value = '';
         }
 
-        // ==========================================
-        //  UI 流程控制 (Crop -> Size -> Upload)
-        // ==========================================
-        function openModal() { 
-            document.getElementById('modal').style.display = 'flex'; 
-            resetCrop(); 
-            // 預設回到階段1
-            showCropPhase();
-            resizeCanvas(); 
-        }
+        // --- 兩階段 UI 邏輯 ---
+        function openModal() {
+            document.getElementById('modal').style.display = 'flex';
+            resetCrop(); resizeCanvas();
+            
+            // 預設顯示 Step 1
+            document.getElementById('step1-crop').style.display = 'flex';
+            document.getElementById('step2-preview').style.display = 'none';
 
-        function showCropPhase() {
-            document.getElementById('phase-crop-container').style.display = 'flex';
-            document.getElementById('phase-size-container').style.display = 'none';
-
-            // 根據類型顯示按鈕
             if (currentUploadType === 'fish') {
-                document.getElementById('crop-mode-group').style.display = 'flex';
+                document.getElementById('crop-mode-selector').style.display = 'flex';
                 document.getElementById('nextStepBtn').style.display = 'inline-block';
-                document.getElementById('directUploadBtn').style.display = 'none';
+                document.getElementById('directBgUploadBtn').style.display = 'none';
                 document.getElementById('instruction').innerText = "拖曳畫出方框 或 使用描邊工具";
             } else {
-                // 背景模式：隱藏描邊，直接顯示上傳按鈕
-                setMode('rect');
-                document.getElementById('crop-mode-group').style.display = 'none';
+                setMode('rect'); // 背景強制方形
+                document.getElementById('crop-mode-selector').style.display = 'none';
                 document.getElementById('nextStepBtn').style.display = 'none';
-                document.getElementById('directUploadBtn').style.display = 'inline-block';
+                document.getElementById('directBgUploadBtn').style.display = 'inline-block';
                 document.getElementById('instruction').innerText = "調整框框範圍 (自動符合螢幕比例)";
             }
         }
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
-        function goToSizePreview() {
-            // 1. 先執行裁剪，產生圖片
-            if(mode==='rect' && rectData.w===0) return alert("請先框選範圍！");
-            if(mode==='poly' && polyPoints.length<3) return alert("請至少點3個點！");
-            
-            // 呼叫產生圖片的函數，存入 tempCroppedImageData
-            tempCroppedImageData = generateCroppedImage(false); // false = return dataURL, not upload
+        // --- Step 1 -> Step 2 (產生裁剪圖 & 進入預覽) ---
+        async function goToStep2() {
+            if(mode==='rect' && rectData.w===0) { await customAlert("請先框選範圍！"); return; }
+            if(mode==='poly' && polyPoints.length<3) { await customAlert("請至少點3個點！"); return; }
 
-            // 2. 切換 UI 到階段 2
-            document.getElementById('phase-crop-container').style.display = 'none';
-            document.getElementById('phase-size-container').style.display = 'flex';
+            // 1. 產生裁剪後的魚 (Base64)
+            tempCroppedFishData = generateCroppedImage(false); 
 
-            // 3. 設定預覽環境
-            const viewport = document.getElementById('size-preview-viewport');
-            viewport.style.background = currentBgUrl;
-            viewport.style.backgroundSize = "cover";
+            // 2. 切換介面
+            document.getElementById('step1-crop').style.display = 'none';
+            document.getElementById('step2-preview').style.display = 'flex';
+
+            // 3. 設定預覽圖與背景
+            const previewViewport = document.getElementById('preview-viewport');
+            previewViewport.style.background = currentBgUrl;
+            previewViewport.style.backgroundSize = "cover";
             
             const previewImg = document.getElementById('preview-fish-final');
-            previewImg.src = tempCroppedImageData;
+            previewImg.src = tempCroppedFishData;
             
-            // 4. 初始化滑桿與大小
+            // 4. 重置滑桿
             document.getElementById('sizeSlider').value = 100;
             updateFinalPreview(100);
         }
 
-        function backToCrop() {
-            document.getElementById('phase-size-container').style.display = 'none';
-            document.getElementById('phase-crop-container').style.display = 'flex';
+        function backToStep1() {
+            document.getElementById('step2-preview').style.display = 'none';
+            document.getElementById('step1-crop').style.display = 'flex';
         }
 
         function updateFinalPreview(val) {
-            const img = document.getElementById('preview-fish-final');
-            img.style.width = val + 'px';
+            document.getElementById('preview-fish-final').style.width = val + 'px';
         }
 
-        function closeModal() { document.getElementById('modal').style.display = 'none'; }
-        
-        function resizeCanvas() {
-            let wrapper = document.getElementById('canvas-wrapper');
-            let scale = Math.min((wrapper.clientWidth-20)/rawImg.width, (wrapper.clientHeight-20)/rawImg.height);
-            canvas.width = rawImg.width * scale; canvas.height = rawImg.height * scale; draw();
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(rawImg, 0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            if (mode === 'rect') {
-                if (currentUploadType === 'bg' && rectData.w === 0) initBgCropBox();
-                if (rectData.w !== 0) {
-                    ctx.clearRect(rectData.x, rectData.y, rectData.w, rectData.h);
-                    ctx.drawImage(rawImg, rectData.x/(canvas.width/rawImg.width), rectData.y/(canvas.height/rawImg.height), rectData.w/(canvas.width/rawImg.width), rectData.h/(canvas.height/rawImg.height), rectData.x, rectData.y, rectData.w, rectData.h);
-                    ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 3; ctx.strokeRect(rectData.x, rectData.y, rectData.w, rectData.h);
-                }
-            } 
-            else if (mode === 'poly' && polyPoints.length > 0) {
-                ctx.save(); ctx.beginPath(); ctx.moveTo(polyPoints[0].x, polyPoints[0].y);
-                for(let i=1; i<polyPoints.length; i++) ctx.lineTo(polyPoints[i].x, polyPoints[i].y);
-                if(polyPoints.length > 2) ctx.closePath(); ctx.clip(); ctx.clearRect(0,0,canvas.width,canvas.height);
-                ctx.drawImage(rawImg, 0, 0, canvas.width, canvas.height); ctx.restore();
-                ctx.beginPath(); ctx.strokeStyle = '#ffff00'; ctx.lineWidth = 2; ctx.moveTo(polyPoints[0].x, polyPoints[0].y);
-                for(let i=1; i<polyPoints.length; i++) ctx.lineTo(polyPoints[i].x, polyPoints[i].y);
-                if(polyPoints.length > 2) ctx.lineTo(polyPoints[0].x, polyPoints[0].y); ctx.stroke();
-                ctx.fillStyle = 'red'; polyPoints.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill(); });
-            }
-        }
-
-        function initBgCropBox() {
-            let screenRatio = window.innerWidth / window.innerHeight;
-            let imgRatio = canvas.width / canvas.height;
-            let w, h;
-            if (imgRatio > screenRatio) { h = canvas.height * 0.9; w = h * screenRatio; } 
-            else { w = canvas.width * 0.9; h = w / screenRatio; }
-            rectData = { x: (canvas.width - w) / 2, y: (canvas.height - h) / 2, w: w, h: h };
-        }
-
-        function getPos(e) { let r = canvas.getBoundingClientRect(); let cx = e.touches?e.touches[0].clientX:e.clientX; let cy = e.touches?e.touches[0].clientY:e.clientY; return {x:cx-r.left, y:cy-r.top}; }
-        function start(e) { if(e.type==='touchstart')e.preventDefault(); let p=getPos(e); if(mode==='rect'){isDragging=true;startPos=p; if(currentUploadType!=='bg') rectData={x:p.x,y:p.y,w:0,h:0}; else startBgDrag(p); }else{polyPoints.push(p);draw();} }
-        let bgDragOffset = {x:0, y:0};
-        function startBgDrag(p) {
-            if (p.x >= rectData.x && p.x <= rectData.x + rectData.w && p.y >= rectData.y && p.y <= rectData.y + rectData.h) {
-                bgDragOffset.x = p.x - rectData.x; bgDragOffset.y = p.y - rectData.y;
-            } else {
-                rectData.x = p.x - rectData.w/2; rectData.y = p.y - rectData.h/2; bgDragOffset.x = rectData.w/2; bgDragOffset.y = rectData.h/2;
-            }
-        }
-        function move(e) { 
-            if(!isDragging||mode!=='rect')return; if(e.type==='touchmove')e.preventDefault(); let p=getPos(e); 
-            if (currentUploadType === 'bg') { rectData.x = p.x - bgDragOffset.x; rectData.y = p.y - bgDragOffset.y; } 
-            else { rectData.w=p.x-startPos.x; rectData.h=p.y-startPos.y; }
-            draw(); 
-        }
-        function end() { isDragging=false; }
-        canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', end);
-        canvas.addEventListener('touchstart', start, {passive:false}); canvas.addEventListener('touchmove', move, {passive:false}); canvas.addEventListener('touchend', end);
-        function setMode(m) { mode=m; resetCrop(); draw(); }
-        function resetCrop() { rectData={x:0,y:0,w:0,h:0}; polyPoints=[]; draw(); }
-
-        // --- 產生裁剪圖片資料 ---
-        function generateCroppedImage() {
+        // --- 核心裁剪邏輯 (共用) ---
+        function generateCroppedImage(isBg) {
             let tempCanvas = document.createElement('canvas'); let tCtx = tempCanvas.getContext('2d'); let r = rawImg.width / canvas.width;
             let cropX, cropY, cropW, cropH;
             if(mode==='rect'){
@@ -599,13 +453,10 @@
                 polyPoints.forEach(p=>{if(p.x<minX)minX=p.x;if(p.x>maxX)maxX=p.x;if(p.y<minY)minY=p.y;if(p.y>maxY)maxY=p.y;});
                 cropX = minX; cropY = minY; cropW = maxX - minX; cropH = maxY - minY;
             }
-
-            const MAX_WIDTH = (currentUploadType === 'bg') ? 1024 : 500;
+            const MAX_WIDTH = isBg ? 1024 : 500;
             let finalScale = 1; let realW = cropW * r; let realH = cropH * r;
             if (realW > MAX_WIDTH) finalScale = MAX_WIDTH / realW;
-
             tempCanvas.width = realW * finalScale; tempCanvas.height = realH * finalScale; tCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-
             if (mode === 'rect') { tCtx.drawImage(rawImg, cropX * r, cropY * r, realW, realH, 0, 0, tempCanvas.width, tempCanvas.height); } 
             else {
                 tCtx.save(); tCtx.beginPath(); let scaleTotal = r * finalScale;
@@ -613,69 +464,98 @@
                 for(let i=1; i<polyPoints.length; i++) tCtx.lineTo((polyPoints[i].x - cropX) * scaleTotal, (polyPoints[i].y - cropY) * scaleTotal);
                 tCtx.closePath(); tCtx.clip(); tCtx.drawImage(rawImg, -cropX * scaleTotal, -cropY * scaleTotal, rawImg.width * finalScale, rawImg.height * finalScale); tCtx.restore();
             }
-
-            // 返回 Base64
-            if (currentUploadType === 'bg') return tempCanvas.toDataURL('image/jpeg', 0.8);
-            return tempCanvas.toDataURL('image/png');
+            // 魚用PNG(透明), 背景用JPG
+            return tempCanvas.toDataURL(isBg ? 'image/jpeg' : 'image/png', isBg ? 0.8 : 1.0);
         }
 
-        // --- 最終上傳 (魚) ---
-        function uploadFishData() {
+        // --- 最終上傳 (Step 2 Confirm) ---
+        function finalUploadFish() {
             if(!dbRef) return;
             let sizeVal = parseInt(document.getElementById('sizeSlider').value);
-            
-            document.getElementById('finishBtn').innerText = "上傳中...";
-            dbRef.push({ image: tempCroppedImageData, size: sizeVal, timestamp: Date.now() })
-            .then(() => { closeModal(); document.getElementById('finishBtn').innerText = "✅ 確定放入水族箱"; })
-            .catch(err => { alert("上傳失敗"); document.getElementById('finishBtn').innerText = "✅ 確定放入水族箱"; });
+            document.getElementById('finishUploadBtn').innerText = "上傳中...";
+            dbRef.push({ image: tempCroppedFishData, size: sizeVal, timestamp: Date.now() })
+            .then(() => { closeModal(); document.getElementById('finishUploadBtn').innerText = "✅ 確定放入水族箱"; })
+            .catch(async err => { await customAlert("上傳失敗"); document.getElementById('finishUploadBtn').innerText = "✅ 確定放入水族箱"; });
         }
 
-        // --- 最終上傳 (背景 - 跳過預覽階段) ---
-        function finishUploadBg() {
-             if(rectData.w===0) return alert("請先調整框框！");
-             let bgBase64 = generateCroppedImage();
+        // --- 背景直接上傳 (Step 1 Confirm) ---
+        async function finishUploadBg() {
+             if(rectData.w===0) { await customAlert("請先調整框框！"); return; }
+             let bgBase64 = generateCroppedImage(true);
              if(currentClassId) {
-                document.getElementById('directUploadBtn').innerText = "更換中...";
+                document.getElementById('directBgUploadBtn').innerText = "更換中...";
                 firebase.database().ref('school_aquarium_bg/' + currentClassId).set({ image: bgBase64, timestamp: Date.now() })
-                .then(() => { closeModal(); document.getElementById('directUploadBtn').innerText = "確定更換背景"; alert("背景更換成功！"); })
-                .catch(err => { alert("上傳失敗"); document.getElementById('directUploadBtn').innerText = "確定更換背景"; });
+                .then(async () => { closeModal(); document.getElementById('directBgUploadBtn').innerText = "確定更換背景"; await customAlert("背景更換成功！"); })
+                .catch(async err => { await customAlert("上傳失敗"); document.getElementById('directBgUploadBtn').innerText = "確定更換背景"; });
              }
         }
 
-        const aquarium = document.getElementById('aquarium'); const fishes = [];
-        function removeFishFromScreen(key) {
-            const index = fishes.findIndex(f => f.dbKey === key);
-            if(index !== -1) { if(fishes[index].container) fishes[index].container.remove(); fishes.splice(index, 1); }
+        // --- Canvas 繪圖與互動 ---
+        function resizeCanvas() {
+            let wrapper = document.getElementById('canvas-wrapper');
+            let scale = Math.min((wrapper.clientWidth-20)/rawImg.width, (wrapper.clientHeight-20)/rawImg.height);
+            canvas.width = rawImg.width * scale; canvas.height = rawImg.height * scale; draw();
         }
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(rawImg, 0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (mode === 'rect') {
+                if (currentUploadType === 'bg' && rectData.w === 0) initBgCropBox();
+                if (rectData.w !== 0) {
+                    ctx.clearRect(rectData.x, rectData.y, rectData.w, rectData.h);
+                    ctx.drawImage(rawImg, rectData.x/(canvas.width/rawImg.width), rectData.y/(canvas.height/rawImg.height), rectData.w/(canvas.width/rawImg.width), rectData.h/(canvas.height/rawImg.height), rectData.x, rectData.y, rectData.w, rectData.h);
+                    ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 3; ctx.strokeRect(rectData.x, rectData.y, rectData.w, rectData.h);
+                }
+            } else if (mode === 'poly' && polyPoints.length > 0) {
+                ctx.save(); ctx.beginPath(); ctx.moveTo(polyPoints[0].x, polyPoints[0].y);
+                for(let i=1; i<polyPoints.length; i++) ctx.lineTo(polyPoints[i].x, polyPoints[i].y);
+                if(polyPoints.length > 2) ctx.closePath(); ctx.clip(); ctx.clearRect(0,0,canvas.width,canvas.height);
+                ctx.drawImage(rawImg, 0, 0, canvas.width, canvas.height); ctx.restore();
+                ctx.beginPath(); ctx.strokeStyle = '#ffff00'; ctx.lineWidth = 2; ctx.moveTo(polyPoints[0].x, polyPoints[0].y);
+                for(let i=1; i<polyPoints.length; i++) ctx.lineTo(polyPoints[i].x, polyPoints[i].y);
+                if(polyPoints.length > 2) ctx.lineTo(polyPoints[0].x, polyPoints[0].y); ctx.stroke();
+                ctx.fillStyle = 'red'; polyPoints.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill(); });
+            }
+        }
+        function initBgCropBox() {
+            let screenRatio = window.innerWidth / window.innerHeight;
+            let imgRatio = canvas.width / canvas.height;
+            let w, h;
+            if (imgRatio > screenRatio) { h = canvas.height * 0.9; w = h * screenRatio; } 
+            else { w = canvas.width * 0.9; h = w / screenRatio; }
+            rectData = { x: (canvas.width - w) / 2, y: (canvas.height - h) / 2, w: w, h: h };
+        }
+        function getPos(e) { let r = canvas.getBoundingClientRect(); let cx = e.touches?e.touches[0].clientX:e.clientX; let cy = e.touches?e.touches[0].clientY:e.clientY; return {x:cx-r.left, y:cy-r.top}; }
+        function start(e) { if(e.type==='touchstart')e.preventDefault(); let p=getPos(e); if(mode==='rect'){isDragging=true;startPos=p; if(currentUploadType!=='bg') rectData={x:p.x,y:p.y,w:0,h:0}; else startBgDrag(p); }else{polyPoints.push(p);draw();} }
+        let bgDragOffset = {x:0, y:0};
+        function startBgDrag(p) { if (p.x >= rectData.x && p.x <= rectData.x + rectData.w && p.y >= rectData.y && p.y <= rectData.y + rectData.h) { bgDragOffset.x = p.x - rectData.x; bgDragOffset.y = p.y - rectData.y; } else { rectData.x = p.x - rectData.w/2; rectData.y = p.y - rectData.h/2; bgDragOffset.x = rectData.w/2; bgDragOffset.y = rectData.h/2; } }
+        function move(e) { if(!isDragging||mode!=='rect')return; if(e.type==='touchmove')e.preventDefault(); let p=getPos(e); if (currentUploadType === 'bg') { rectData.x = p.x - bgDragOffset.x; rectData.y = p.y - bgDragOffset.y; } else { rectData.w=p.x-startPos.x; rectData.h=p.y-startPos.y; } draw(); }
+        function end() { isDragging=false; }
+        canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', end);
+        canvas.addEventListener('touchstart', start, {passive:false}); canvas.addEventListener('touchmove', move, {passive:false}); canvas.addEventListener('touchend', end);
+        function setMode(m) { mode=m; resetCrop(); draw(); }
+        function resetCrop() { rectData={x:0,y:0,w:0,h:0}; polyPoints=[]; draw(); }
 
+        const aquarium = document.getElementById('aquarium'); const fishes = [];
+        function removeFishFromScreen(key) { const index = fishes.findIndex(f => f.dbKey === key); if(index !== -1) { if(fishes[index].container) fishes[index].container.remove(); fishes.splice(index, 1); } }
         class Fish {
             constructor(data, dbKey) {
-                this.dbKey = dbKey; this.imageSrc = data.image; this.size = data.size || (Math.random() * 80 + 50);
-                this.authorInfo = data.author ? `${data.fromClass} ${data.author}` : "";
+                this.dbKey = dbKey; this.imageSrc = data.image; this.size = data.size || (Math.random() * 80 + 50); this.authorInfo = data.author ? `${data.fromClass} ${data.author}` : "";
                 this.container = document.createElement('div'); this.container.className = 'fish-container'; this.container.style.opacity = '0';
-                if(this.authorInfo) this.container.classList.add('has-author');
-                if (this.authorInfo) {
-                     let label = document.createElement('div'); label.className = 'fish-name-label'; label.innerText = this.authorInfo; this.container.appendChild(label);
-                }
+                if(this.authorInfo) { this.container.classList.add('has-author'); let label = document.createElement('div'); label.className = 'fish-name-label'; label.innerText = this.authorInfo; this.container.appendChild(label); }
                 this.element = document.createElement('img'); this.element.src = this.imageSrc; this.element.className = 'fish-img'; this.element.style.width = this.size + 'px';
                 this.container.appendChild(this.element);
-                let labelHeight = this.authorInfo ? 25 : 0; 
-                this.x = Math.random() * (window.innerWidth - this.size); this.y = Math.random() * (window.innerHeight - this.size - labelHeight) + labelHeight;
+                let labelHeight = this.authorInfo ? 25 : 0; this.x = Math.random() * (window.innerWidth - this.size); this.y = Math.random() * (window.innerHeight - this.size - labelHeight) + labelHeight;
                 this.vx = (Math.random() - 0.5) * 3; this.vy = (Math.random() - 0.5) * 1.5; if(Math.abs(this.vx) < 0.5) this.vx = 1;
-
-                this.container.onclick = (e) => {
+                this.container.onclick = async (e) => {
                     e.stopPropagation(); 
-                    if(isDeleteMode) { if(confirm("確定要刪除嗎？")) firebase.database().ref('school_aquarium_fish/' + currentClassId + '/' + this.dbKey).remove(); return; }
+                    if(isDeleteMode) { if(await customConfirm("確定要刪除嗎？")) firebase.database().ref('school_aquarium_fish/' + currentClassId + '/' + this.dbKey).remove(); return; }
                     if(isSubmitMode) {
-                        let authorName = prompt("請輸入作者學生姓名：");
-                        if(authorName) {
-                            firebase.database().ref('school_aquarium_fish/Lobby').push({
-                                image: this.imageSrc, size: this.size, author: authorName, fromClass: currentClassId, timestamp: Date.now()
-                            }).then(() => { alert(`已發布到大廳！`); toggleSubmitMode(); });
-                        }
+                        let authorName = await customPrompt("請輸入作者學生姓名：");
+                        if(authorName) { firebase.database().ref('school_aquarium_fish/Lobby').push({ image: this.imageSrc, size: this.size, author: authorName, fromClass: currentClassId, timestamp: Date.now() }).then(async () => { await customAlert(`已發布到大廳！`); toggleSubmitMode(); }); }
                         return;
                     }
-                    if(this.authorInfo) alert("✨ 優秀作品：\n" + this.authorInfo);
+                    if(this.authorInfo) await customAlert("✨ 優秀作品：\n" + this.authorInfo);
                 };
                 aquarium.appendChild(this.container); setTimeout(() => { this.container.style.opacity = '1'; }, 100);
             }
@@ -685,8 +565,7 @@
                 else if (isSubmitMode) { this.container.classList.add('submittable'); this.container.style.cursor = 'pointer'; }
             }
             update() {
-                let labelOffset = this.authorInfo ? 25 : 0;
-                this.x += this.vx; this.y += this.vy;
+                let labelOffset = this.authorInfo ? 25 : 0; this.x += this.vx; this.y += this.vy;
                 if (this.x <= 0 || this.x + this.size >= window.innerWidth) this.vx *= -1;
                 if (this.y <= labelOffset || this.y + this.size >= window.innerHeight) this.vy *= -1;
                 this.container.style.transform = `translate(${this.x}px, ${this.y}px)`;
