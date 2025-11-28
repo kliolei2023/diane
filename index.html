@@ -1,135 +1,881 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>校園數位共創水族箱 (完美流程版)</title>
+    <title>校園數位共創水族箱 | 專業版</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* --- 基礎設定 --- */
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #222; font-family: "Microsoft JhengHei", sans-serif; }
-        
-        #aquarium {
-            width: 100%; height: 100%; position: relative; overflow: hidden;
-            background: linear-gradient(180deg,#4facfe 0%, #00f2fe 100%);
-            background-size: cover; background-position: center; transition: background 0.5s ease;
+        /* --- 基礎設定與變數 --- */
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #e74c3c;
+            --secondary-dark: #c0392b;
+            --accent: #f39c12;
+            --accent-dark: #e67e22;
+            --success: #2ecc71;
+            --success-dark: #27ae60;
+            --warning: #f1c40f;
+            --warning-dark: #f39c12;
+            --danger: #e74c3c;
+            --danger-dark: #c0392b;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --gray: #95a5a6;
+            --gray-dark: #7f8c8d;
+            --gradient-primary: linear-gradient(135deg, #3498db, #2c3e50);
+            --gradient-secondary: linear-gradient(135deg, #e74c3c, #c0392b);
+            --gradient-accent: linear-gradient(135deg, #f39c12, #e67e22);
+            --gradient-success: linear-gradient(135deg, #2ecc71, #27ae60);
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.2);
+            --radius: 12px;
+            --radius-lg: 20px;
+            --transition: all 0.3s ease;
         }
-        #bg-image-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.5s; z-index: 0; pointer-events: none; }
-        #sand { position: absolute; bottom: 0; width: 100%; height: 80px; background: #e6d99c; border-top: 5px solid #d4c585; z-index: 2; pointer-events: none; transition: opacity 0.5s; }
-
-        /* --- UI 元件 --- */
-        #class-list-bar { position: absolute; top: 0; left: 0; width: 100%; height: 50px; background: rgba(0,0,0,0.5); z-index: 140; display: flex; align-items: center; padding: 0 10px; overflow-x: auto; white-space: nowrap; gap: 8px; }
-        #class-list-bar::-webkit-scrollbar { display: none; }
-        .lobby-btn { background: linear-gradient(45deg, #FFD700, #FFA500); color: #333; font-weight: bold; padding: 6px 15px; border-radius: 20px; font-size: 14px; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 10px rgba(255,215,0,0.5); display: flex; align-items: center; gap: 5px; }
-        .class-tag { background: rgba(255,255,255,0.2); color: white; padding: 5px 12px; border-radius: 15px; font-size: 14px; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); transition: 0.2s; }
-        .class-tag.active { background: #007bff; border-color: #007bff; box-shadow: 0 0 10px #007bff; }
-
-        #top-nav { position: absolute; top: 60px; left: 15px; z-index: 150; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
-        #class-input-area, #class-management-area { background: rgba(0,0,0,0.7); padding: 8px; border-radius: 8px; display: flex; gap: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        #class-management-area { display: none; align-items: center; }
-        #class-label-btn { background: rgba(0,123,255,0.9); color: white; padding: 8px 15px; border-radius: 20px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        input.class-input { padding: 5px; border-radius: 4px; border: none; width: 90px; text-align: center; outline: none; }
-        #menu-toggle-btn { background: rgba(255,255,255,0.9); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
-
-        #controls-container { margin-top: 5px; display: flex; flex-direction: column; gap: 10px; transform-origin: top left; transition: transform 0.3s, opacity 0.3s; }
-        .controls-hidden { transform: scale(0); opacity: 0; pointer-events: none; height: 0; }
-        .panel { background: rgba(255,255,255,0.95); padding: 12px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 8px; width: 180px; }
-        h3 { margin: 0 0 5px 0; font-size: 16px; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
         
-        .btn { border: none; padding: 8px; border-radius: 6px; font-size: 14px; cursor: pointer; color: white; text-align: center; font-weight: bold; transition: 0.2s; }
-        .btn:active { transform: scale(0.96); }
-        .btn-blue { background: #007bff; } .btn-orange { background: #fd7e14; } .btn-red { background: #dc3545; }
-        .btn-gray { background: #6c757d; } .btn-purple { background: #6f42c1; } .btn-gold { background: #ffc107; color: #333; } .btn-green { background: #28a745; }
-        .btn-sm { padding: 4px 8px; font-size: 12px; }
-        .delete-mode-active { background: #dc3545 !important; animation: pulse-red 1s infinite; }
-        .submit-mode-active { background: #ffc107 !important; color:black; animation: pulse-gold 1s infinite; }
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
-        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); } }
-
-        input[type="file"] { display: none; }
-        .fish-container { position: absolute; z-index: 10; display: flex; flex-direction: column; align-items: center; pointer-events: auto; transition: opacity 0.5s; }
-        .fish-img { filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3)); transition: filter 0.2s; }
-        .fish-name-label { color: white; font-size: 13px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.9); margin-bottom: 4px; white-space: nowrap; padding: 2px 6px; background: rgba(0,0,0,0.3); border-radius: 10px; }
-        .fish-container.deletable .fish-img:hover { filter: drop-shadow(0 0 10px red); transform: scale(1.1); }
-        .fish-container.submittable .fish-img:hover { filter: drop-shadow(0 0 15px gold); transform: scale(1.2); }
-        .fish-container.has-author { cursor: help; }
-
+        * {
+            box-sizing: border-box;
+        }
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--dark);
+            font-family: "Microsoft JhengHei", "PingFang TC", "Helvetica Neue", Arial, sans-serif;
+            color: var(--light);
+        }
+        
+        /* --- 登入畫面 --- */
+        #login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient-primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: var(--transition);
+        }
+        
+        .login-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .login-title {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: white;
+            font-weight: 700;
+        }
+        
+        .login-subtitle {
+            font-size: 16px;
+            margin-bottom: 30px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .password-input {
+            width: 100%;
+            padding: 15px 20px;
+            border-radius: 50px;
+            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 20px;
+            outline: none;
+            transition: var(--transition);
+            border: 2px solid transparent;
+        }
+        
+        .password-input:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: var(--accent);
+        }
+        
+        .password-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 50px;
+            border: none;
+            background: var(--gradient-accent);
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+        }
+        
+        .login-error {
+            color: var(--danger);
+            margin-top: 15px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        /* --- 水族箱主體 --- */
+        #aquarium {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(180deg, #1a2980 0%, #26d0ce 100%);
+            background-size: cover;
+            background-position: center;
+            transition: background 0.5s ease;
+        }
+        
+        #bg-image-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        #sand {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(to top, #e6d99c, #d4c585);
+            z-index: 2;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        
+        /* --- 班級列表欄 --- */
+        #class-list-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            z-index: 140;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            overflow-x: auto;
+            white-space: nowrap;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #class-list-bar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .lobby-btn {
+            background: var(--gradient-accent);
+            color: white;
+            font-weight: 600;
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+            transition: var(--transition);
+        }
+        
+        .lobby-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .class-tag {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 6px 15px;
+            border-radius: 50px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        
+        .class-tag:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
+        .class-tag.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+        }
+        
+        .separator {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 20px;
+            margin: 0 5px;
+        }
+        
+        /* --- 頂部導航 --- */
+        #top-nav {
+            position: absolute;
+            top: 70px;
+            left: 15px;
+            z-index: 150;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        
+        #class-input-area, #class-management-area {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 12px;
+            border-radius: var(--radius);
+            display: flex;
+            gap: 8px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #class-management-area {
+            display: none;
+            align-items: center;
+        }
+        
+        #class-label-btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #class-label-btn:hover {
+            background: var(--primary-dark);
+        }
+        
+        input.class-input {
+            padding: 8px 12px;
+            border-radius: 50px;
+            border: none;
+            width: 120px;
+            text-align: center;
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+        
+        input.class-input:focus {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 0 2px var(--accent);
+        }
+        
+        input.class-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        #menu-toggle-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            color: var(--dark);
+        }
+        
+        #menu-toggle-btn:hover {
+            transform: rotate(90deg);
+            background: white;
+        }
+        
+        /* --- 控制面板 --- */
+        #controls-container {
+            margin-top: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transform-origin: top left;
+            transition: var(--transition);
+        }
+        
+        .controls-hidden {
+            transform: scale(0);
+            opacity: 0;
+            pointer-events: none;
+            height: 0;
+        }
+        
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 220px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .panel h3 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            color: var(--dark);
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn {
+            border: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            color: white;
+            text-align: center;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-blue { background: var(--primary); }
+        .btn-orange { background: var(--accent); }
+        .btn-red { background: var(--danger); }
+        .btn-gray { background: var(--gray); }
+        .btn-purple { background: #9b59b6; }
+        .btn-gold { background: var(--warning); color: #333; }
+        .btn-green { background: var(--success); }
+        
+        .btn-sm {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+        
+        .delete-mode-active {
+            background: var(--danger) !important;
+            animation: pulse-red 1.5s infinite;
+        }
+        
+        .submit-mode-active {
+            background: var(--warning) !important;
+            color: #333;
+            animation: pulse-gold 1.5s infinite;
+        }
+        
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+        
+        @keyframes pulse-gold {
+            0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); }
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        /* --- 魚類樣式 --- */
+        .fish-container {
+            position: absolute;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: auto;
+            transition: opacity 0.5s;
+        }
+        
+        .fish-img {
+            filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.3));
+            transition: var(--transition);
+        }
+        
+        .fish-name-label {
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
+            margin-bottom: 4px;
+            white-space: nowrap;
+            padding: 3px 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .fish-container.deletable .fish-img:hover {
+            filter: drop-shadow(0 0 10px var(--danger));
+            transform: scale(1.1);
+        }
+        
+        .fish-container.submittable .fish-img:hover {
+            filter: drop-shadow(0 0 15px var(--warning));
+            transform: scale(1.2);
+        }
+        
+        .fish-container.has-author {
+            cursor: help;
+        }
+        
         /* --- 模態視窗與兩階段佈局 --- */
-        #modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; display: none; flex-direction: column; }
+        #modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+        }
         
         /* 階段 1: 裁剪 */
-        #step1-crop { flex: 1; display: flex; flex-direction: column; width: 100%; height: 100%; }
-        #canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; touch-action: none; background: #111; }
-        canvas { box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        #crop-toolbar { height: 70px; background: #333; display: flex; align-items: center; justify-content: center; gap: 15px; padding: 10px; color: white; border-top: 1px solid #555; }
-
+        #step1-crop {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #canvas-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            touch-action: none;
+            background: #111;
+        }
+        
+        canvas {
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+        }
+        
+        #crop-toolbar {
+            height: 80px;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 10px;
+            color: white;
+            border-top: 1px solid #555;
+        }
+        
         /* 階段 2: 預覽 */
-        #step2-preview { display: none; flex: 1; flex-direction: column; width: 100%; height: 100%; }
-        #preview-viewport { flex: 1; width: 100%; background-color: #222; background-size: cover; background-position: center; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        #preview-fish-final { max-width: none; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5)); transition: width 0.1s; }
-        #preview-toolbar { height: 100px; background: #333; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 10px; color: white; border-top: 1px solid #555; }
-
-        .radio-group { display: flex; gap: 10px; background: #555; padding: 5px 15px; border-radius: 20px; }
-        .radio-group label { cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 14px; color: white;}
-        input[type=range] { width: 250px; accent-color: #007bff; }
-
+        #step2-preview {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #preview-viewport {
+            flex: 1;
+            width: 100%;
+            background-color: #222;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #preview-fish-final {
+            max-width: none;
+            filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.5));
+            transition: width 0.1s;
+        }
+        
+        #preview-toolbar {
+            height: 100px;
+            background: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px;
+            color: white;
+            border-top: 1px solid #555;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 10px;
+            background: #555;
+            padding: 8px 15px;
+            border-radius: 50px;
+        }
+        
+        .radio-group label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            color: white;
+        }
+        
+        input[type=range] {
+            width: 250px;
+            accent-color: var(--primary);
+        }
+        
         /* 對話框 */
-        #custom-dialog-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); z-index: 9999; display: none; align-items: center; justify-content: center; }
-        #custom-dialog-box { background: rgba(30,30,30,0.85); color: white; width: 85%; max-width: 320px; padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; animation: popIn 0.3s ease; }
-        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        #dialog-title { font-size: 18px; margin: 0 0 10px 0; font-weight: bold; color: #ffeb3b; }
-        #dialog-msg { font-size: 15px; margin-bottom: 20px; line-height: 1.5; color: #eee; }
-        #dialog-input { width: 90%; padding: 10px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #555; background: rgba(255,255,255,0.1); color: white; font-size: 16px; text-align: center; outline: none; display: none; }
-        #dialog-buttons { display: flex; gap: 10px; justify-content: center; }
-        .dialog-btn { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
-        #btn-confirm { background: #007bff; color: white; } #btn-cancel { background: #555; color: white; }
-
-        #loading-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 5; pointer-events: none; }
+        #custom-dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(3px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #custom-dialog-box {
+            background: rgba(30, 30, 30, 0.9);
+            backdrop-filter: blur(10px);
+            color: white;
+            width: 85%;
+            max-width: 350px;
+            padding: 25px;
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+            animation: popIn 0.3s ease;
+        }
+        
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        #dialog-title {
+            font-size: 20px;
+            margin: 0 0 10px 0;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        
+        #dialog-msg {
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+            color: #eee;
+        }
+        
+        #dialog-input {
+            width: 90%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+            display: none;
+        }
+        
+        #dialog-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .dialog-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        #btn-confirm {
+            background: var(--success);
+            color: white;
+        }
+        
+        #btn-cancel {
+            background: var(--gray);
+            color: white;
+        }
+        
+        .dialog-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        #loading-msg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 5;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 25px;
+            border-radius: 50px;
+            backdrop-filter: blur(5px);
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            #top-nav {
+                left: 10px;
+                top: 65px;
+            }
+            
+            .panel {
+                width: 200px;
+            }
+            
+            #class-input-area, #class-management-area {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            input.class-input {
+                width: 100%;
+            }
+            
+            #crop-toolbar, #preview-toolbar {
+                flex-direction: column;
+                height: auto;
+                padding: 15px;
+                gap: 10px;
+            }
+            
+            input[type=range] {
+                width: 200px;
+            }
+            
+            .login-container {
+                padding: 30px 20px;
+            }
+        }
+        
+        /* 水波紋效果 */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0);
+            animation: ripple-animation 0.6s linear;
+            pointer-events: none;
+        }
+        
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        
+        /* 氣泡效果 */
+        .bubble {
+            position: absolute;
+            bottom: -50px;
+            width: 10px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: bubble-rise 15s infinite ease-in;
+            opacity: 0;
+        }
+        
+        @keyframes bubble-rise {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            90% {
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateY(-100vh) scale(2);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div id="aquarium">
+    <!-- 登入畫面 -->
+    <div id="login-screen">
+        <div class="login-container">
+            <h1 class="login-title">校園數位共創水族箱</h1>
+            <p class="login-subtitle">請輸入密碼進入創作空間</p>
+            <input type="password" class="password-input" placeholder="請輸入密碼" id="password-input">
+            <button class="login-btn" id="login-btn">
+                <i class="fas fa-lock-open"></i> 進入水族箱
+            </button>
+            <div class="login-error" id="login-error">
+                <i class="fas fa-exclamation-circle"></i> 密碼錯誤，請重新輸入
+            </div>
+        </div>
+        
+        <!-- 背景氣泡 -->
+        <div id="bubbles-container"></div>
+    </div>
+
+    <!-- 水族箱主體 -->
+    <div id="aquarium" style="display: none;">
         <div id="class-list-bar">
-            <div class="lobby-btn" onclick="initClassRoom('Lobby')">🏠 大廳 (優秀作品)</div>
-            <span style="color:rgba(255,255,255,0.3); font-size:18px;">|</span>
+            <div class="lobby-btn" onclick="app.initClassRoom('Lobby')">
+                <i class="fas fa-home"></i> 大廳 (優秀作品)
+            </div>
+            <div class="separator">|</div>
             <div id="dynamic-class-list" style="display:flex; gap:8px;"></div>
         </div>
 
         <div id="top-nav">
             <div id="class-input-area">
                 <input type="text" id="classInput" class="class-input" placeholder="輸入班號">
-                <button class="btn btn-blue" style="padding: 5px 10px;" onclick="switchClass()">進入/新增</button>
+                <button class="btn btn-blue" style="padding: 8px 12px;" onclick="app.switchClass()">
+                    <i class="fas fa-door-open"></i> 進入/新增
+                </button>
             </div>
             <div id="class-management-area">
-                <div id="class-label-btn" onclick="showClassInput()" title="點擊切換其他班級">
+                <div id="class-label-btn" onclick="app.showClassInput()" title="點擊切換其他班級">
+                    <i class="fas fa-map-marker-alt"></i>
                     <span id="current-class-text">📍 501 班</span>
                 </div>
-                <button class="btn btn-orange btn-sm" onclick="renameCurrentClass()" title="修改班級名稱">✏️</button>
-                <button class="btn btn-red btn-sm" onclick="deleteCurrentClass()" title="刪除整個班級">❌</button>
+                <button class="btn btn-orange btn-sm" onclick="app.renameCurrentClass()" title="修改班級名稱">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-red btn-sm" onclick="app.deleteCurrentClass()" title="刪除整個班級">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
-            <button id="menu-toggle-btn" onclick="toggleControls()" title="顯示/隱藏選單">☰</button>
+            <button id="menu-toggle-btn" onclick="app.toggleControls()" title="顯示/隱藏選單">
+                <i class="fas fa-bars"></i>
+            </button>
 
             <div id="controls-container">
                 <div class="panel">
-                    <h3>🐟 創作與上傳</h3>
-                    <button class="btn btn-blue" onclick="document.getElementById('fishInput').click()">📸 上傳並裁剪畫作</button>
-                    <input type="file" id="fishInput" accept="image/*" onchange="handleFishFile(this)">
+                    <h3><i class="fas fa-fish"></i> 創作與上傳</h3>
+                    <button class="btn btn-blue" onclick="document.getElementById('fishInput').click()">
+                        <i class="fas fa-camera"></i> 上傳並裁剪畫作
+                    </button>
+                    <input type="file" id="fishInput" accept="image/*" onchange="app.handleFishFile(this)">
                 </div>
                 <div class="panel">
-                    <h3>🛠️ 管理工具</h3>
-                    <button id="submitModeBtn" class="btn btn-gold" onclick="toggleSubmitMode()">🏆 投稿優秀作品 (關)</button>
-                    <button id="deleteModeBtn" class="btn btn-purple" onclick="toggleDeleteMode()">❌ 刪除單隻魚 (關)</button>
-                    <button class="btn btn-red" onclick="clearAllFish()">🗑️ 清空魚缸(保留班級)</button>
+                    <h3><i class="fas fa-tools"></i> 管理工具</h3>
+                    <button id="submitModeBtn" class="btn btn-gold" onclick="app.toggleSubmitMode()">
+                        <i class="fas fa-trophy"></i> 投稿優秀作品 (關)
+                    </button>
+                    <button id="deleteModeBtn" class="btn btn-purple" onclick="app.toggleDeleteMode()">
+                        <i class="fas fa-trash"></i> 刪除單隻魚 (關)
+                    </button>
+                    <button class="btn btn-red" onclick="app.clearAllFish()">
+                        <i class="fas fa-broom"></i> 清空魚缸(保留班級)
+                    </button>
                 </div>
                 <div class="panel">
-                    <h3>🏫 場景設定</h3>
-                    <button class="btn btn-orange" onclick="document.getElementById('bgInput').click()">🖼️ 上傳背景(固定框)</button>
-                    <input type="file" id="bgInput" accept="image/*" onchange="handleBgFile(this)">
-                    <button class="btn btn-gray" onclick="resetBackground()">🌊 恢復深海</button>
+                    <h3><i class="fas fa-school"></i> 場景設定</h3>
+                    <button class="btn btn-orange" onclick="document.getElementById('bgInput').click()">
+                        <i class="fas fa-image"></i> 上傳背景(固定框)
+                    </button>
+                    <input type="file" id="bgInput" accept="image/*" onchange="app.handleBgFile(this)">
+                    <button class="btn btn-gray" onclick="app.resetBackground()">
+                        <i class="fas fa-water"></i> 恢復深海
+                    </button>
                 </div>
             </div>
         </div>
@@ -139,6 +885,7 @@
         <div id="sand"></div>
     </div>
 
+    <!-- 自定義對話框 -->
     <div id="custom-dialog-overlay">
         <div id="custom-dialog-box">
             <div id="dialog-title">提示</div>
@@ -151,6 +898,7 @@
         </div>
     </div>
 
+    <!-- 圖片編輯模態視窗 -->
     <div id="modal">
         <div id="step1-crop">
             <div id="canvas-wrapper">
@@ -159,12 +907,18 @@
             </div>
             <div id="crop-toolbar">
                 <div class="radio-group" id="crop-mode-selector">
-                    <label><input type="radio" name="mode" value="rect" checked onclick="setMode('rect')"> 🟦 方形</label>
-                    <label><input type="radio" name="mode" value="poly" onclick="setMode('poly')"> ✂️ 描邊</label>
+                    <label><input type="radio" name="mode" value="rect" checked onclick="app.setMode('rect')"> <i class="fas fa-square"></i> 方形</label>
+                    <label><input type="radio" name="mode" value="poly" onclick="app.setMode('poly')"> <i class="fas fa-cut"></i> 描邊</label>
                 </div>
-                <button class="btn btn-blue" id="nextStepBtn" onclick="goToStep2()">下一步：調整大小 ➡</button>
-                <button class="btn btn-green" id="directBgUploadBtn" style="display:none;" onclick="finishUploadBg()">確定更換背景</button>
-                <button class="btn btn-gray" onclick="closeModal()">取消</button>
+                <button class="btn btn-blue" id="nextStepBtn" onclick="app.goToStep2()">
+                    <i class="fas fa-arrow-right"></i> 下一步：調整大小
+                </button>
+                <button class="btn btn-green" id="directBgUploadBtn" style="display:none;" onclick="app.finishUploadBg()">
+                    <i class="fas fa-check"></i> 確定更換背景
+                </button>
+                <button class="btn btn-gray" onclick="app.closeModal()">
+                    <i class="fas fa-times"></i> 取消
+                </button>
             </div>
         </div>
 
@@ -172,410 +926,970 @@
             <div id="preview-viewport">
                 <img id="preview-fish-final" src="">
                 <div style="position:absolute; top:15px; left:15px; color:rgba(255,255,255,0.8); font-size:14px; background:rgba(0,0,0,0.5); padding:5px 10px; border-radius:20px;">
-                    👁️ 真實環境模擬
+                    <i class="fas fa-eye"></i> 真實環境模擬
                 </div>
             </div>
             <div id="preview-toolbar">
                 <div style="display:flex; align-items:center; gap:10px; width:90%; justify-content:center;">
                     <span style="font-size:14px;">調整大小:</span>
                     <span style="font-size:12px;">小</span>
-                    <input type="range" id="sizeSlider" min="30" max="300" value="100" oninput="updateFinalPreview(this.value)">
+                    <input type="range" id="sizeSlider" min="30" max="300" value="100" oninput="app.updateFinalPreview(this.value)">
                     <span style="font-size:12px;">大</span>
                 </div>
                 <div style="display:flex; gap:10px;">
-                    <button class="btn btn-gray" onclick="backToStep1()">⬅ 上一步</button>
-                    <button class="btn btn-green" id="finishUploadBtn" onclick="finalUploadFish()">✅ 確定放入水族箱</button>
+                    <button class="btn btn-gray" onclick="app.backToStep1()">
+                        <i class="fas fa-arrow-left"></i> 上一步
+                    </button>
+                    <button class="btn btn-green" id="finishUploadBtn" onclick="app.finalUploadFish()">
+                        <i class="fas fa-check"></i> 確定放入水族箱
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyAUoYIt2CdivHIoLK-ZjsucejJkuzzQRnA",
-            authDomain: "fish321-36ce2.firebaseapp.com",
-            databaseURL: "https://fish321-36ce2-default-rtdb.firebaseio.com",
-            projectId: "fish321-36ce2",
-            storageBucket: "fish321-36ce2.firebasestorage.app",
-            messagingSenderId: "237771099270",
-            appId: "1:237771099270:web:9621037d8ec40242091507",
-            measurementId: "G-4QESL7JL49"
+        // 應用程式主體
+        const app = {
+            // Firebase 配置
+            firebaseConfig: {
+                apiKey: "AIzaSyAUoYIt2CdivHIoLK-ZjsucejJkuzzQRnA",
+                authDomain: "fish321-36ce2.firebaseapp.com",
+                databaseURL: "https://fish321-36ce2-default-rtdb.firebaseio.com",
+                projectId: "fish321-36ce2",
+                storageBucket: "fish321-36ce2.firebasestorage.app",
+                messagingSenderId: "237771099270",
+                appId: "1:237771099270:web:9621037d8ec40242091507",
+                measurementId: "G-4QESL7JL49"
+            },
+
+            // 應用狀態
+            state: {
+                dbRef: null,
+                rootRef: null,
+                bgRef: null,
+                currentClassId: "Lobby",
+                isDeleteMode: false,
+                isSubmitMode: false,
+                isControlsVisible: true,
+                currentUploadType: 'fish',
+                currentBgUrl: "",
+                tempCroppedFishData: null,
+                fishes: []
+            },
+
+            // 初始化應用
+            init() {
+                // 設置登入事件監聽器
+                document.getElementById('login-btn').addEventListener('click', () => this.checkPassword());
+                document.getElementById('password-input').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.checkPassword();
+                });
+                
+                // 生成背景氣泡
+                this.generateBubbles();
+                
+                // 初始化 Firebase
+                try {
+                    firebase.initializeApp(this.firebaseConfig);
+                    this.state.rootRef = firebase.database().ref('school_aquarium_fish');
+                    this.listenToClassList();
+                } catch (e) {
+                    console.error("Firebase 初始化失敗:", e);
+                }
+            },
+
+            // 密碼檢查
+            checkPassword() {
+                const passwordInput = document.getElementById('password-input');
+                const loginError = document.getElementById('login-error');
+                const password = passwordInput.value;
+                
+                if (password === "198345") {
+                    // 密碼正確，顯示水族箱
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('aquarium').style.display = 'block';
+                    
+                    // 初始化水族箱
+                    this.initClassRoom("Lobby");
+                    
+                    // 添加水波紋效果
+                    this.createRippleEffect(passwordInput);
+                } else {
+                    // 密碼錯誤
+                    loginError.style.display = 'block';
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                    
+                    // 添加震動效果
+                    passwordInput.style.animation = 'shake 0.5s';
+                    setTimeout(() => {
+                        passwordInput.style.animation = '';
+                    }, 500);
+                }
+            },
+            
+            // 生成背景氣泡
+            generateBubbles() {
+                const bubblesContainer = document.getElementById('bubbles-container');
+                for (let i = 0; i < 15; i++) {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'bubble';
+                    
+                    // 隨機位置和大小
+                    const left = Math.random() * 100;
+                    const size = Math.random() * 20 + 5;
+                    const delay = Math.random() * 15;
+                    const duration = Math.random() * 10 + 10;
+                    
+                    bubble.style.left = `${left}%`;
+                    bubble.style.width = `${size}px`;
+                    bubble.style.height = `${size}px`;
+                    bubble.style.animationDelay = `${delay}s`;
+                    bubble.style.animationDuration = `${duration}s`;
+                    
+                    bubblesContainer.appendChild(bubble);
+                }
+            },
+            
+            // 創建水波紋效果
+            createRippleEffect(element) {
+                const rect = element.getBoundingClientRect();
+                const ripple = document.createElement('div');
+                ripple.className = 'ripple';
+                ripple.style.left = `${rect.left + rect.width/2}px`;
+                ripple.style.top = `${rect.top + rect.height/2}px`;
+                document.body.appendChild(ripple);
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            },
+
+            // 對話框系統
+            showDialog(title, msg, type = 'alert', placeholder = '') {
+                return new Promise((resolve) => {
+                    const overlay = document.getElementById('custom-dialog-overlay');
+                    const titleEl = document.getElementById('dialog-title');
+                    const msgEl = document.getElementById('dialog-msg');
+                    const inputEl = document.getElementById('dialog-input');
+                    const btnConfirm = document.getElementById('btn-confirm');
+                    const btnCancel = document.getElementById('btn-cancel');
+
+                    titleEl.innerText = title;
+                    msgEl.innerText = msg;
+                    inputEl.value = '';
+                    inputEl.style.display = 'none';
+                    btnCancel.style.display = 'none';
+
+                    if (type === 'prompt') {
+                        inputEl.style.display = 'block';
+                        inputEl.value = placeholder;
+                        btnCancel.style.display = 'block';
+                    } else if (type === 'confirm') {
+                        btnCancel.style.display = 'block';
+                    }
+
+                    overlay.style.display = 'flex';
+                    if (type === 'prompt') inputEl.focus();
+
+                    const close = () => {
+                        overlay.style.display = 'none';
+                        btnConfirm.onclick = null;
+                        btnCancel.onclick = null;
+                    };
+
+                    btnConfirm.onclick = () => {
+                        close();
+                        if (type === 'prompt') resolve(inputEl.value);
+                        else resolve(true);
+                    };
+
+                    btnCancel.onclick = () => {
+                        close();
+                        resolve(false);
+                    };
+                });
+            },
+
+            async customAlert(msg) {
+                await this.showDialog("提示", msg, 'alert');
+            },
+
+            async customConfirm(msg) {
+                return await this.showDialog("確認", msg, 'confirm');
+            },
+
+            async customPrompt(msg, placeholder = "") {
+                const res = await this.showDialog("輸入", msg, 'prompt', placeholder);
+                return res === false ? null : res;
+            },
+
+            // 班級管理
+            listenToClassList() {
+                this.state.rootRef.on('value', (snapshot) => {
+                    const listContainer = document.getElementById('dynamic-class-list');
+                    listContainer.innerHTML = "";
+
+                    snapshot.forEach((childSnapshot) => {
+                        const className = childSnapshot.key;
+                        if (className !== "Lobby") {
+                            const tag = document.createElement('div');
+                            tag.className = 'class-tag';
+                            if (className === this.state.currentClassId) tag.classList.add('active');
+                            tag.innerText = className;
+                            tag.onclick = () => {
+                                document.getElementById('classInput').value = className;
+                                this.switchClass();
+                            };
+                            listContainer.appendChild(tag);
+                        }
+                    });
+                });
+            },
+
+            async switchClass() {
+                let inputVal = document.getElementById('classInput').value.trim();
+                if (!inputVal) {
+                    await this.customAlert("請輸入班級名稱！");
+                    return;
+                }
+
+                if (inputVal === "Lobby") return this.initClassRoom("Lobby");
+
+                const safeClassId = inputVal.replace(/[.#$/[\]]/g, "_");
+                this.initClassRoom(safeClassId);
+                document.getElementById('class-input-area').style.display = 'none';
+                document.getElementById('class-management-area').style.display = 'flex';
+                document.getElementById('current-class-text').innerText = `📍 ${safeClassId} 班`;
+                document.getElementById('classInput').value = '';
+                this.updateClassHighlight(safeClassId);
+            },
+
+            showClassInput() {
+                document.getElementById('class-management-area').style.display = 'none';
+                document.getElementById('class-input-area').style.display = 'flex';
+            },
+
+            updateClassHighlight(className) {
+                document.querySelectorAll('.class-tag').forEach(t => t.classList.remove('active'));
+                Array.from(document.querySelectorAll('.class-tag')).forEach(t => {
+                    if (t.innerText === className) t.classList.add('active');
+                });
+            },
+
+            async deleteCurrentClass() {
+                if (this.state.currentClassId === "Lobby") {
+                    await this.customAlert("大廳不能刪除！");
+                    return;
+                }
+
+                if (await this.customConfirm(`⚠️ 警告！\n\n您即將刪除【${this.state.currentClassId}】整個班級。\n確定嗎？`)) {
+                    firebase.database().ref('school_aquarium_fish/' + this.state.currentClassId).remove();
+                    firebase.database().ref('school_aquarium_bg/' + this.state.currentClassId).remove()
+                        .then(async () => {
+                            await this.customAlert("班級已刪除，返回大廳。");
+                            this.initClassRoom("Lobby");
+                            this.showClassInput();
+                        });
+                }
+            },
+
+            async renameCurrentClass() {
+                if (this.state.currentClassId === "Lobby") {
+                    await this.customAlert("大廳不能改名！");
+                    return;
+                }
+
+                let newName = await this.customPrompt(`請輸入【${this.state.currentClassId}】的新名稱：`, this.state.currentClassId);
+                if (newName && newName !== this.state.currentClassId) {
+                    let safeNewName = newName.replace(/[.#$/[\]]/g, "_");
+                    this.state.dbRef.once('value').then(snapshot => {
+                        let data = snapshot.val();
+                        firebase.database().ref('school_aquarium_fish/' + safeNewName).set(data).then(() => {
+                            this.state.dbRef.remove();
+                        });
+                    });
+
+                    firebase.database().ref('school_aquarium_bg/' + this.state.currentClassId).once('value').then(snap => {
+                        let bgData = snap.val();
+                        if (bgData) {
+                            firebase.database().ref('school_aquarium_bg/' + safeNewName).set(bgData)
+                                .then(() => firebase.database().ref('school_aquarium_bg/' + this.state.currentClassId).remove());
+                        }
+                    });
+
+                    await this.customAlert(`改名成功！請重新進入 ${safeNewName}`);
+                    this.initClassRoom("Lobby");
+                    this.showClassInput();
+                }
+            },
+
+            // 班級初始化
+            initClassRoom(classId) {
+                if (this.state.dbRef) this.state.dbRef.off();
+                if (this.state.bgRef) this.state.bgRef.off();
+
+                const allFishes = document.querySelectorAll('.fish-container');
+                allFishes.forEach(f => f.remove());
+                this.state.fishes.length = 0;
+
+                this.state.currentClassId = classId;
+
+                if (classId === "Lobby") {
+                    document.getElementById('class-input-area').style.display = 'flex';
+                    document.getElementById('class-management-area').style.display = 'none';
+                    document.getElementById('classInput').value = "";
+                    this.updateClassHighlight("Lobby");
+                }
+
+                document.getElementById('loading-msg').style.display = 'block';
+                document.getElementById('loading-msg').innerText = classId === "Lobby" ?
+                    "正在進入優秀作品大廳..." : `正在載入 ${classId} 的水族箱...`;
+
+                this.state.dbRef = firebase.database().ref('school_aquarium_fish/' + classId);
+                this.state.dbRef.on('child_added', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data && data.image) this.createFish(data, snapshot.key);
+                    document.getElementById('loading-msg').style.display = 'none';
+                });
+
+                this.state.dbRef.on('child_removed', (snapshot) => this.removeFishFromScreen(snapshot.key));
+
+                this.state.bgRef = firebase.database().ref('school_aquarium_bg/' + classId);
+                this.state.bgRef.on('value', (snapshot) => {
+                    const bgData = snapshot.val();
+                    const bgLayer = document.getElementById('bg-image-layer');
+                    const sandLayer = document.getElementById('sand');
+                    let defaultBg = "linear-gradient(180deg, #1a2980 0%, #26d0ce 100%)";
+
+                    if (bgData && bgData.image) {
+                        bgLayer.src = bgData.image;
+                        bgLayer.style.opacity = 1;
+                        sandLayer.style.opacity = 0;
+                        this.state.currentBgUrl = `url(${bgData.image})`;
+                    } else {
+                        bgLayer.style.opacity = 0;
+                        sandLayer.style.opacity = 1;
+                        this.state.currentBgUrl = defaultBg;
+                    }
+                });
+
+                this.resetModes();
+            },
+
+            // 模式管理
+            resetModes() {
+                this.state.isDeleteMode = false;
+                this.state.isSubmitMode = false;
+                this.updateModeButtons();
+                document.getElementById('aquarium').style.cursor = "default";
+            },
+
+            async clearAllFish() {
+                if (!this.state.dbRef) return;
+                if (this.state.currentClassId === "Lobby") {
+                    await this.customAlert("大廳不能一鍵清空！");
+                    return;
+                }
+
+                if (await this.customConfirm(`⚠️ 確定要清空魚嗎？(背景會保留)`)) {
+                    this.state.dbRef.remove();
+                }
+            },
+
+            async resetBackground() {
+                if (await this.customConfirm("確定要恢復預設深海背景嗎？")) {
+                    firebase.database().ref('school_aquarium_bg/' + this.state.currentClassId).remove();
+                }
+            },
+
+            toggleDeleteMode() {
+                if (this.state.isSubmitMode) this.toggleSubmitMode();
+                this.state.isDeleteMode = !this.state.isDeleteMode;
+                this.updateModeButtons();
+            },
+
+            async toggleSubmitMode() {
+                if (this.state.currentClassId === "Lobby") {
+                    await this.customAlert("請到各班級投稿！");
+                    return;
+                }
+
+                if (this.state.isDeleteMode) this.toggleDeleteMode();
+                this.state.isSubmitMode = !this.state.isSubmitMode;
+                this.updateModeButtons();
+
+                if (this.state.isSubmitMode) {
+                    await this.customAlert("✨ 進入投稿模式！\n\n點擊魚即可輸入作者姓名並投稿。");
+                }
+            },
+
+            updateModeButtons() {
+                const delBtn = document.getElementById('deleteModeBtn');
+                const subBtn = document.getElementById('submitModeBtn');
+                const aqua = document.getElementById('aquarium');
+
+                if (this.state.isDeleteMode) {
+                    delBtn.innerHTML = '<i class="fas fa-check"></i> 結束刪除';
+                    delBtn.classList.add('delete-mode-active');
+                    aqua.style.cursor = "crosshair";
+                } else {
+                    delBtn.innerHTML = '<i class="fas fa-trash"></i> 刪除單隻魚 (關)';
+                    delBtn.classList.remove('delete-mode-active');
+                }
+
+                if (this.state.isSubmitMode) {
+                    subBtn.innerHTML = '<i class="fas fa-check"></i> 結束投稿';
+                    subBtn.classList.add('submit-mode-active');
+                    aqua.style.cursor = "pointer";
+                } else {
+                    subBtn.innerHTML = '<i class="fas fa-trophy"></i> 投稿優秀作品 (關)';
+                    subBtn.classList.remove('submit-mode-active');
+                }
+
+                if (!this.state.isDeleteMode && !this.state.isSubmitMode) {
+                    aqua.style.cursor = "default";
+                }
+
+                this.state.fishes.forEach(fish => fish.updateStyle());
+            },
+
+            // 控制面板
+            toggleControls() {
+                const container = document.getElementById('controls-container');
+                container.classList.toggle('controls-hidden');
+            },
+
+            // 文件上傳處理
+            handleFishFile(input) {
+                if (input.files && input.files[0]) {
+                    this.state.currentUploadType = 'fish';
+                    let reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.rawImg.onload = () => {
+                            this.openModal();
+                        };
+                        this.rawImg.src = e.target.result;
+                    };
+                    reader.readAsDataURL(input.files[0]);
+                }
+                input.value = '';
+            },
+
+            handleBgFile(input) {
+                if (input.files && input.files[0]) {
+                    this.state.currentUploadType = 'bg';
+                    let reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.rawImg.onload = () => {
+                            this.openModal();
+                        };
+                        this.rawImg.src = e.target.result;
+                    };
+                    reader.readAsDataURL(input.files[0]);
+                }
+                input.value = '';
+            },
+
+            // 兩階段 UI 邏輯
+            openModal() {
+                document.getElementById('modal').style.display = 'flex';
+                this.resetCrop();
+                this.resizeCanvas();
+
+                // 預設顯示 Step 1
+                document.getElementById('step1-crop').style.display = 'flex';
+                document.getElementById('step2-preview').style.display = 'none';
+
+                if (this.state.currentUploadType === 'fish') {
+                    document.getElementById('crop-mode-selector').style.display = 'flex';
+                    document.getElementById('nextStepBtn').style.display = 'inline-block';
+                    document.getElementById('directBgUploadBtn').style.display = 'none';
+                    document.getElementById('instruction').innerText = "拖曳畫出方框 或 使用描邊工具";
+                } else {
+                    this.setMode('rect'); // 背景強制方形
+                    document.getElementById('crop-mode-selector').style.display = 'none';
+                    document.getElementById('nextStepBtn').style.display = 'none';
+                    document.getElementById('directBgUploadBtn').style.display = 'inline-block';
+                    document.getElementById('instruction').innerText = "調整框框範圍 (自動符合螢幕比例)";
+                }
+            },
+
+            closeModal() {
+                document.getElementById('modal').style.display = 'none';
+            },
+
+            // Step 1 -> Step 2 (產生裁剪圖 & 進入預覽)
+            async goToStep2() {
+                if (this.mode === 'rect' && this.rectData.w === 0) {
+                    await this.customAlert("請先框選範圍！");
+                    return;
+                }
+
+                if (this.mode === 'poly' && this.polyPoints.length < 3) {
+                    await this.customAlert("請至少點3個點！");
+                    return;
+                }
+
+                // 1. 產生裁剪後的魚 (Base64)
+                this.state.tempCroppedFishData = this.generateCroppedImage(false);
+
+                // 2. 切換介面
+                document.getElementById('step1-crop').style.display = 'none';
+                document.getElementById('step2-preview').style.display = 'flex';
+
+                // 3. 設定預覽圖與背景
+                const previewViewport = document.getElementById('preview-viewport');
+                previewViewport.style.background = this.state.currentBgUrl;
+                previewViewport.style.backgroundSize = "cover";
+
+                const previewImg = document.getElementById('preview-fish-final');
+                previewImg.src = this.state.tempCroppedFishData;
+
+                // 4. 重置滑桿
+                document.getElementById('sizeSlider').value = 100;
+                this.updateFinalPreview(100);
+            },
+
+            backToStep1() {
+                document.getElementById('step2-preview').style.display = 'none';
+                document.getElementById('step1-crop').style.display = 'flex';
+            },
+
+            updateFinalPreview(val) {
+                document.getElementById('preview-fish-final').style.width = val + 'px';
+            },
+
+            // 核心裁剪邏輯 (共用)
+            generateCroppedImage(isBg) {
+                let tempCanvas = document.createElement('canvas');
+                let tCtx = tempCanvas.getContext('2d');
+                let r = this.rawImg.width / this.canvas.width;
+
+                let cropX, cropY, cropW, cropH;
+
+                if (this.mode === 'rect') {
+                    cropX = this.rectData.w > 0 ? this.rectData.x : this.rectData.x + this.rectData.w;
+                    cropY = this.rectData.h > 0 ? this.rectData.y : this.rectData.y + this.rectData.h;
+                    cropW = Math.abs(this.rectData.w);
+                    cropH = Math.abs(this.rectData.h);
+                } else {
+                    let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
+                    this.polyPoints.forEach(p => {
+                        if (p.x < minX) minX = p.x;
+                        if (p.x > maxX) maxX = p.x;
+                        if (p.y < minY) minY = p.y;
+                        if (p.y > maxY) maxY = p.y;
+                    });
+                    cropX = minX;
+                    cropY = minY;
+                    cropW = maxX - minX;
+                    cropH = maxY - minY;
+                }
+
+                const MAX_WIDTH = isBg ? 1024 : 500;
+                let finalScale = 1;
+                let realW = cropW * r;
+                let realH = cropH * r;
+
+                if (realW > MAX_WIDTH) finalScale = MAX_WIDTH / realW;
+
+                tempCanvas.width = realW * finalScale;
+                tempCanvas.height = realH * finalScale;
+                tCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+                if (this.mode === 'rect') {
+                    tCtx.drawImage(this.rawImg, cropX * r, cropY * r, realW, realH, 0, 0, tempCanvas.width, tempCanvas.height);
+                } else {
+                    tCtx.save();
+                    tCtx.beginPath();
+                    let scaleTotal = r * finalScale;
+                    tCtx.moveTo((this.polyPoints[0].x - cropX) * scaleTotal, (this.polyPoints[0].y - cropY) * scaleTotal);
+                    for (let i = 1; i < this.polyPoints.length; i++) {
+                        tCtx.lineTo((this.polyPoints[i].x - cropX) * scaleTotal, (this.polyPoints[i].y - cropY) * scaleTotal);
+                    }
+                    tCtx.closePath();
+                    tCtx.clip();
+                    tCtx.drawImage(this.rawImg, -cropX * scaleTotal, -cropY * scaleTotal, this.rawImg.width * finalScale, this.rawImg.height * finalScale);
+                    tCtx.restore();
+                }
+
+                // 魚用PNG(透明), 背景用JPG
+                return tempCanvas.toDataURL(isBg ? 'image/jpeg' : 'image/png', isBg ? 0.8 : 1.0);
+            },
+
+            // 最終上傳 (Step 2 Confirm)
+            finalUploadFish() {
+                if (!this.state.dbRef) return;
+
+                let sizeVal = parseInt(document.getElementById('sizeSlider').value);
+                document.getElementById('finishUploadBtn').innerText = "上傳中...";
+
+                this.state.dbRef.push({
+                    image: this.state.tempCroppedFishData,
+                    size: sizeVal,
+                    timestamp: Date.now()
+                })
+                    .then(() => {
+                        this.closeModal();
+                        document.getElementById('finishUploadBtn').innerText = "✅ 確定放入水族箱";
+                    })
+                    .catch(async err => {
+                        await this.customAlert("上傳失敗");
+                        document.getElementById('finishUploadBtn').innerText = "✅ 確定放入水族箱";
+                    });
+            },
+
+            // 背景直接上傳 (Step 1 Confirm)
+            async finishUploadBg() {
+                if (this.rectData.w === 0) {
+                    await this.customAlert("請先調整框框！");
+                    return;
+                }
+
+                let bgBase64 = this.generateCroppedImage(true);
+                if (this.state.currentClassId) {
+                    document.getElementById('directBgUploadBtn').innerText = "更換中...";
+                    firebase.database().ref('school_aquarium_bg/' + this.state.currentClassId).set({
+                        image: bgBase64,
+                        timestamp: Date.now()
+                    })
+                        .then(async () => {
+                            this.closeModal();
+                            document.getElementById('directBgUploadBtn').innerText = "確定更換背景";
+                            await this.customAlert("背景更換成功！");
+                        })
+                        .catch(async err => {
+                            await this.customAlert("上傳失敗");
+                            document.getElementById('directBgUploadBtn').innerText = "確定更換背景";
+                        });
+                }
+            },
+
+            // Canvas 繪圖與互動
+            resizeCanvas() {
+                let wrapper = document.getElementById('canvas-wrapper');
+                let scale = Math.min((wrapper.clientWidth - 20) / this.rawImg.width, (wrapper.clientHeight - 20) / this.rawImg.height);
+                this.canvas.width = this.rawImg.width * scale;
+                this.canvas.height = this.rawImg.height * scale;
+                this.draw();
+            },
+
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.drawImage(this.rawImg, 0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                if (this.mode === 'rect') {
+                    if (this.state.currentUploadType === 'bg' && this.rectData.w === 0) this.initBgCropBox();
+                    if (this.rectData.w !== 0) {
+                        this.ctx.clearRect(this.rectData.x, this.rectData.y, this.rectData.w, this.rectData.h);
+                        this.ctx.drawImage(
+                            this.rawImg,
+                            this.rectData.x / (this.canvas.width / this.rawImg.width),
+                            this.rectData.y / (this.canvas.height / this.rawImg.height),
+                            this.rectData.w / (this.canvas.width / this.rawImg.width),
+                            this.rectData.h / (this.canvas.height / this.rawImg.height),
+                            this.rectData.x,
+                            this.rectData.y,
+                            this.rectData.w,
+                            this.rectData.h
+                        );
+                        this.ctx.strokeStyle = '#FFD700';
+                        this.ctx.lineWidth = 3;
+                        this.ctx.strokeRect(this.rectData.x, this.rectData.y, this.rectData.w, this.rectData.h);
+                    }
+                } else if (this.mode === 'poly' && this.polyPoints.length > 0) {
+                    this.ctx.save();
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.polyPoints[0].x, this.polyPoints[0].y);
+                    for (let i = 1; i < this.polyPoints.length; i++) {
+                        this.ctx.lineTo(this.polyPoints[i].x, this.polyPoints[i].y);
+                    }
+                    if (this.polyPoints.length > 2) this.ctx.closePath();
+                    this.ctx.clip();
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.drawImage(this.rawImg, 0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.restore();
+
+                    this.ctx.beginPath();
+                    this.ctx.strokeStyle = '#ffff00';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.moveTo(this.polyPoints[0].x, this.polyPoints[0].y);
+                    for (let i = 1; i < this.polyPoints.length; i++) {
+                        this.ctx.lineTo(this.polyPoints[i].x, this.polyPoints[i].y);
+                    }
+                    if (this.polyPoints.length > 2) this.ctx.lineTo(this.polyPoints[0].x, this.polyPoints[0].y);
+                    this.ctx.stroke();
+
+                    this.ctx.fillStyle = 'red';
+                    this.polyPoints.forEach(p => {
+                        this.ctx.beginPath();
+                        this.ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    });
+                }
+            },
+
+            initBgCropBox() {
+                let screenRatio = window.innerWidth / window.innerHeight;
+                let imgRatio = this.canvas.width / this.canvas.height;
+                let w, h;
+
+                if (imgRatio > screenRatio) {
+                    h = this.canvas.height * 0.9;
+                    w = h * screenRatio;
+                } else {
+                    w = this.canvas.width * 0.9;
+                    h = w / screenRatio;
+                }
+
+                this.rectData = {
+                    x: (this.canvas.width - w) / 2,
+                    y: (this.canvas.height - h) / 2,
+                    w: w,
+                    h: h
+                };
+            },
+
+            getPos(e) {
+                let r = this.canvas.getBoundingClientRect();
+                let cx = e.touches ? e.touches[0].clientX : e.clientX;
+                let cy = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: cx - r.left,
+                    y: cy - r.top
+                };
+            },
+
+            start(e) {
+                if (e.type === 'touchstart') e.preventDefault();
+                let p = this.getPos(e);
+
+                if (this.mode === 'rect') {
+                    this.isDragging = true;
+                    this.startPos = p;
+                    if (this.state.currentUploadType !== 'bg') {
+                        this.rectData = {
+                            x: p.x,
+                            y: p.y,
+                            w: 0,
+                            h: 0
+                        };
+                    } else {
+                        this.startBgDrag(p);
+                    }
+                } else {
+                    this.polyPoints.push(p);
+                    this.draw();
+                }
+            },
+
+            startBgDrag(p) {
+                if (p.x >= this.rectData.x && p.x <= this.rectData.x + this.rectData.w &&
+                    p.y >= this.rectData.y && p.y <= this.rectData.y + this.rectData.h) {
+                    this.bgDragOffset.x = p.x - this.rectData.x;
+                    this.bgDragOffset.y = p.y - this.rectData.y;
+                } else {
+                    this.rectData.x = p.x - this.rectData.w / 2;
+                    this.rectData.y = p.y - this.rectData.h / 2;
+                    this.bgDragOffset.x = this.rectData.w / 2;
+                    this.bgDragOffset.y = this.rectData.h / 2;
+                }
+            },
+
+            move(e) {
+                if (!this.isDragging || this.mode !== 'rect') return;
+                if (e.type === 'touchmove') e.preventDefault();
+                let p = this.getPos(e);
+
+                if (this.state.currentUploadType === 'bg') {
+                    this.rectData.x = p.x - this.bgDragOffset.x;
+                    this.rectData.y = p.y - this.bgDragOffset.y;
+                } else {
+                    this.rectData.w = p.x - this.startPos.x;
+                    this.rectData.h = p.y - this.startPos.y;
+                }
+
+                this.draw();
+            },
+
+            end() {
+                this.isDragging = false;
+            },
+
+            setMode(m) {
+                this.mode = m;
+                this.resetCrop();
+                this.draw();
+            },
+
+            resetCrop() {
+                this.rectData = {
+                    x: 0,
+                    y: 0,
+                    w: 0,
+                    h: 0
+                };
+                this.polyPoints = [];
+                this.draw();
+            },
+
+            // 魚類管理
+            removeFishFromScreen(key) {
+                const index = this.state.fishes.findIndex(f => f.dbKey === key);
+                if (index !== -1) {
+                    if (this.state.fishes[index].container) this.state.fishes[index].container.remove();
+                    this.state.fishes.splice(index, 1);
+                }
+            },
+
+            createFish(data, dbKey) {
+                const f = new Fish(data, dbKey);
+                f.updateStyle();
+                this.state.fishes.push(f);
+            },
+
+            // 動畫循環
+            animate() {
+                this.state.fishes.forEach(fish => fish.update());
+                requestAnimationFrame(() => this.animate());
+            }
         };
 
-        let dbRef = null; let rootRef = null; let bgRef = null; let currentClassId = "Lobby"; 
-        let isDeleteMode = false; let isSubmitMode = false; let isControlsVisible = true;
-        let currentUploadType = 'fish'; 
-        let currentBgUrl = "";
-        let tempCroppedFishData = null; // 暫存步驟1的結果
-
-        // --- Dialog System ---
-        function showDialog(title, msg, type = 'alert', placeholder = '') {
-            return new Promise((resolve) => {
-                const overlay = document.getElementById('custom-dialog-overlay');
-                const titleEl = document.getElementById('dialog-title');
-                const msgEl = document.getElementById('dialog-msg');
-                const inputEl = document.getElementById('dialog-input');
-                const btnConfirm = document.getElementById('btn-confirm');
-                const btnCancel = document.getElementById('btn-cancel');
-
-                titleEl.innerText = title; msgEl.innerText = msg; inputEl.value = '';
-                inputEl.style.display = 'none'; btnCancel.style.display = 'none';
-                if (type === 'prompt') { inputEl.style.display = 'block'; inputEl.value = placeholder; btnCancel.style.display = 'block'; }
-                else if (type === 'confirm') { btnCancel.style.display = 'block'; }
-
-                overlay.style.display = 'flex'; if(type === 'prompt') inputEl.focus();
-                const close = () => { overlay.style.display = 'none'; btnConfirm.onclick = null; btnCancel.onclick = null; };
-                btnConfirm.onclick = () => { close(); if (type === 'prompt') resolve(inputEl.value); else resolve(true); };
-                btnCancel.onclick = () => { close(); resolve(false); };
-            });
-        }
-        async function customAlert(msg) { await showDialog("提示", msg, 'alert'); }
-        async function customConfirm(msg) { return await showDialog("確認", msg, 'confirm'); }
-        async function customPrompt(msg, placeholder = "") { const res = await showDialog("輸入", msg, 'prompt', placeholder); return res === false ? null : res; }
-
-        // --- Main Logic ---
-        try {
-            firebase.initializeApp(firebaseConfig);
-            rootRef = firebase.database().ref('school_aquarium_fish');
-            listenToClassList();
-            initClassRoom("Lobby");
-        } catch (e) { console.error(e); }
-
-        function listenToClassList() {
-            rootRef.on('value', (snapshot) => {
-                const listContainer = document.getElementById('dynamic-class-list');
-                listContainer.innerHTML = ""; 
-                snapshot.forEach((childSnapshot) => {
-                    const className = childSnapshot.key;
-                    if (className !== "Lobby") {
-                        const tag = document.createElement('div'); tag.className = 'class-tag';
-                        if(className === currentClassId) tag.classList.add('active');
-                        tag.innerText = className;
-                        tag.onclick = () => { document.getElementById('classInput').value = className; switchClass(); };
-                        listContainer.appendChild(tag);
-                    }
-                });
-            });
-        }
-
-        async function switchClass() {
-            let inputVal = document.getElementById('classInput').value.trim();
-            if(!inputVal) { await customAlert("請輸入班級名稱！"); return; }
-            if(inputVal === "Lobby") return initClassRoom("Lobby");
-            const safeClassId = inputVal.replace(/[.#$/[\]]/g, "_");
-            initClassRoom(safeClassId);
-            document.getElementById('class-input-area').style.display = 'none';
-            document.getElementById('class-management-area').style.display = 'flex';
-            document.getElementById('current-class-text').innerText = `📍 ${safeClassId} 班`;
-            document.getElementById('classInput').value = '';
-            updateClassHighlight(safeClassId);
-        }
-        function showClassInput() { document.getElementById('class-management-area').style.display = 'none'; document.getElementById('class-input-area').style.display = 'flex'; }
-        function updateClassHighlight(className) { document.querySelectorAll('.class-tag').forEach(t => t.classList.remove('active')); Array.from(document.querySelectorAll('.class-tag')).forEach(t => { if(t.innerText === className) t.classList.add('active'); }); }
-
-        async function deleteCurrentClass() {
-            if(currentClassId === "Lobby") { await customAlert("大廳不能刪除！"); return; }
-            if(await customConfirm(`⚠️ 警告！\n\n您即將刪除【${currentClassId}】整個班級。\n確定嗎？`)) {
-                firebase.database().ref('school_aquarium_fish/' + currentClassId).remove();
-                firebase.database().ref('school_aquarium_bg/' + currentClassId).remove()
-                .then(async () => { await customAlert("班級已刪除，返回大廳。"); initClassRoom("Lobby"); showClassInput(); });
-            }
-        }
-        async function renameCurrentClass() {
-            if(currentClassId === "Lobby") { await customAlert("大廳不能改名！"); return; }
-            let newName = await customPrompt(`請輸入【${currentClassId}】的新名稱：`, currentClassId);
-            if(newName && newName !== currentClassId) {
-                let safeNewName = newName.replace(/[.#$/[\]]/g, "_");
-                dbRef.once('value').then(snapshot => {
-                    let data = snapshot.val();
-                    firebase.database().ref('school_aquarium_fish/' + safeNewName).set(data).then(() => { dbRef.remove(); });
-                });
-                firebase.database().ref('school_aquarium_bg/' + currentClassId).once('value').then(snap => {
-                    let bgData = snap.val();
-                    if(bgData) {
-                        firebase.database().ref('school_aquarium_bg/' + safeNewName).set(bgData)
-                        .then(() => firebase.database().ref('school_aquarium_bg/' + currentClassId).remove());
-                    }
-                });
-                await customAlert(`改名成功！請重新進入 ${safeNewName}`); initClassRoom("Lobby"); showClassInput();
-            }
-        }
-
-        function initClassRoom(classId) {
-            if (dbRef) dbRef.off(); if (bgRef) bgRef.off();
-            const allFishes = document.querySelectorAll('.fish-container');
-            allFishes.forEach(f => f.remove()); fishes.length = 0;
-            currentClassId = classId;
-            if(classId === "Lobby") {
-                document.getElementById('class-input-area').style.display = 'flex';
-                document.getElementById('class-management-area').style.display = 'none';
-                document.getElementById('classInput').value = "";
-                updateClassHighlight("Lobby");
-            }
-            document.getElementById('loading-msg').style.display = 'block';
-            document.getElementById('loading-msg').innerText = classId === "Lobby" ? "正在進入優秀作品大廳..." : `正在載入 ${classId} 的水族箱...`;
-
-            dbRef = firebase.database().ref('school_aquarium_fish/' + classId);
-            dbRef.on('child_added', (snapshot) => {
-                const data = snapshot.val(); if(data && data.image) createFish(data, snapshot.key);
-                document.getElementById('loading-msg').style.display = 'none';
-            });
-            dbRef.on('child_removed', (snapshot) => removeFishFromScreen(snapshot.key));
-
-            bgRef = firebase.database().ref('school_aquarium_bg/' + classId);
-            bgRef.on('value', (snapshot) => {
-                const bgData = snapshot.val();
-                const bgLayer = document.getElementById('bg-image-layer');
-                const sandLayer = document.getElementById('sand');
-                let defaultBg = "linear-gradient(180deg,#4facfe 0%, #00f2fe 100%)";
-                if (bgData && bgData.image) {
-                    bgLayer.src = bgData.image; bgLayer.style.opacity = 1; sandLayer.style.opacity = 0;
-                    currentBgUrl = `url(${bgData.image})`;
-                } else {
-                    bgLayer.style.opacity = 0; sandLayer.style.opacity = 1;
-                    currentBgUrl = defaultBg;
-                }
-            });
-            resetModes();
-        }
-
-        function resetModes() { isDeleteMode = false; isSubmitMode = false; updateModeButtons(); document.getElementById('aquarium').style.cursor = "default"; }
-        async function clearAllFish() {
-            if(!dbRef) return; if(currentClassId === "Lobby") { await customAlert("大廳不能一鍵清空！"); return; }
-            if(await customConfirm(`⚠️ 確定要清空魚嗎？(背景會保留)`)) dbRef.remove();
-        }
-        async function resetBackground() { if(await customConfirm("確定要恢復預設深海背景嗎？")) firebase.database().ref('school_aquarium_bg/' + currentClassId).remove(); }
-        function toggleDeleteMode() { if(isSubmitMode) toggleSubmitMode(); isDeleteMode = !isDeleteMode; updateModeButtons(); }
-        async function toggleSubmitMode() { 
-            if(currentClassId === "Lobby") { await customAlert("請到各班級投稿！"); return; }
-            if(isDeleteMode) toggleDeleteMode(); isSubmitMode = !isSubmitMode; updateModeButtons();
-            if(isSubmitMode) await customAlert("✨ 進入投稿模式！\n\n點擊魚即可輸入作者姓名並投稿。");
-        }
-        function updateModeButtons() {
-            const delBtn = document.getElementById('deleteModeBtn'); const subBtn = document.getElementById('submitModeBtn'); const aqua = document.getElementById('aquarium');
-            if(isDeleteMode) { delBtn.innerText = "✅ 結束刪除"; delBtn.classList.add('delete-mode-active'); aqua.style.cursor = "crosshair"; } 
-            else { delBtn.innerText = "❌ 刪除單隻魚 (關)"; delBtn.classList.remove('delete-mode-active'); }
-            if(isSubmitMode) { subBtn.innerText = "✨ 結束投稿"; subBtn.classList.add('submit-mode-active'); aqua.style.cursor = "pointer"; }
-            else { subBtn.innerText = "🏆 投稿優秀作品 (關)"; subBtn.classList.remove('submit-mode-active'); }
-            if(!isDeleteMode && !isSubmitMode) aqua.style.cursor = "default";
-            fishes.forEach(fish => fish.updateStyle());
-        }
-
-        let canvas = document.getElementById('editor'); let ctx = canvas.getContext('2d'); let rawImg = new Image();
-        let mode = 'rect'; let isDragging = false; let startPos = {x:0, y:0}; let rectData = {x:0, y:0, w:0, h:0}; let polyPoints = [];
-
-        function toggleControls() {
-            const container = document.getElementById('controls-container'); container.classList.toggle('controls-hidden');
-        }
-        function handleFishFile(input) {
-            if (input.files && input.files[0]) {
-                currentUploadType = 'fish'; let reader = new FileReader();
-                reader.onload = function(e) { rawImg.onload = function() { openModal(); }; rawImg.src = e.target.result; };
-                reader.readAsDataURL(input.files[0]);
-            }
-            input.value = '';
-        }
-        function handleBgFile(input) {
-            if (input.files && input.files[0]) {
-                currentUploadType = 'bg'; let reader = new FileReader();
-                reader.onload = function(e) { rawImg.onload = function() { openModal(); }; rawImg.src = e.target.result; };
-                reader.readAsDataURL(input.files[0]);
-            }
-            input.value = '';
-        }
-
-        // --- 兩階段 UI 邏輯 ---
-        function openModal() {
-            document.getElementById('modal').style.display = 'flex';
-            resetCrop(); resizeCanvas();
-            
-            // 預設顯示 Step 1
-            document.getElementById('step1-crop').style.display = 'flex';
-            document.getElementById('step2-preview').style.display = 'none';
-
-            if (currentUploadType === 'fish') {
-                document.getElementById('crop-mode-selector').style.display = 'flex';
-                document.getElementById('nextStepBtn').style.display = 'inline-block';
-                document.getElementById('directBgUploadBtn').style.display = 'none';
-                document.getElementById('instruction').innerText = "拖曳畫出方框 或 使用描邊工具";
-            } else {
-                setMode('rect'); // 背景強制方形
-                document.getElementById('crop-mode-selector').style.display = 'none';
-                document.getElementById('nextStepBtn').style.display = 'none';
-                document.getElementById('directBgUploadBtn').style.display = 'inline-block';
-                document.getElementById('instruction').innerText = "調整框框範圍 (自動符合螢幕比例)";
-            }
-        }
-        function closeModal() { document.getElementById('modal').style.display = 'none'; }
-
-        // --- Step 1 -> Step 2 (產生裁剪圖 & 進入預覽) ---
-        async function goToStep2() {
-            if(mode==='rect' && rectData.w===0) { await customAlert("請先框選範圍！"); return; }
-            if(mode==='poly' && polyPoints.length<3) { await customAlert("請至少點3個點！"); return; }
-
-            // 1. 產生裁剪後的魚 (Base64)
-            tempCroppedFishData = generateCroppedImage(false); 
-
-            // 2. 切換介面
-            document.getElementById('step1-crop').style.display = 'none';
-            document.getElementById('step2-preview').style.display = 'flex';
-
-            // 3. 設定預覽圖與背景
-            const previewViewport = document.getElementById('preview-viewport');
-            previewViewport.style.background = currentBgUrl;
-            previewViewport.style.backgroundSize = "cover";
-            
-            const previewImg = document.getElementById('preview-fish-final');
-            previewImg.src = tempCroppedFishData;
-            
-            // 4. 重置滑桿
-            document.getElementById('sizeSlider').value = 100;
-            updateFinalPreview(100);
-        }
-
-        function backToStep1() {
-            document.getElementById('step2-preview').style.display = 'none';
-            document.getElementById('step1-crop').style.display = 'flex';
-        }
-
-        function updateFinalPreview(val) {
-            document.getElementById('preview-fish-final').style.width = val + 'px';
-        }
-
-        // --- 核心裁剪邏輯 (共用) ---
-        function generateCroppedImage(isBg) {
-            let tempCanvas = document.createElement('canvas'); let tCtx = tempCanvas.getContext('2d'); let r = rawImg.width / canvas.width;
-            let cropX, cropY, cropW, cropH;
-            if(mode==='rect'){
-                cropX = rectData.w > 0 ? rectData.x : rectData.x + rectData.w; cropY = rectData.h > 0 ? rectData.y : rectData.y + rectData.h;
-                cropW = Math.abs(rectData.w); cropH = Math.abs(rectData.h);
-            } else {
-                let minX=Infinity, minY=Infinity, maxX=0, maxY=0; 
-                polyPoints.forEach(p=>{if(p.x<minX)minX=p.x;if(p.x>maxX)maxX=p.x;if(p.y<minY)minY=p.y;if(p.y>maxY)maxY=p.y;});
-                cropX = minX; cropY = minY; cropW = maxX - minX; cropH = maxY - minY;
-            }
-            const MAX_WIDTH = isBg ? 1024 : 500;
-            let finalScale = 1; let realW = cropW * r; let realH = cropH * r;
-            if (realW > MAX_WIDTH) finalScale = MAX_WIDTH / realW;
-            tempCanvas.width = realW * finalScale; tempCanvas.height = realH * finalScale; tCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-            if (mode === 'rect') { tCtx.drawImage(rawImg, cropX * r, cropY * r, realW, realH, 0, 0, tempCanvas.width, tempCanvas.height); } 
-            else {
-                tCtx.save(); tCtx.beginPath(); let scaleTotal = r * finalScale;
-                tCtx.moveTo((polyPoints[0].x - cropX) * scaleTotal, (polyPoints[0].y - cropY) * scaleTotal);
-                for(let i=1; i<polyPoints.length; i++) tCtx.lineTo((polyPoints[i].x - cropX) * scaleTotal, (polyPoints[i].y - cropY) * scaleTotal);
-                tCtx.closePath(); tCtx.clip(); tCtx.drawImage(rawImg, -cropX * scaleTotal, -cropY * scaleTotal, rawImg.width * finalScale, rawImg.height * finalScale); tCtx.restore();
-            }
-            // 魚用PNG(透明), 背景用JPG
-            return tempCanvas.toDataURL(isBg ? 'image/jpeg' : 'image/png', isBg ? 0.8 : 1.0);
-        }
-
-        // --- 最終上傳 (Step 2 Confirm) ---
-        function finalUploadFish() {
-            if(!dbRef) return;
-            let sizeVal = parseInt(document.getElementById('sizeSlider').value);
-            document.getElementById('finishUploadBtn').innerText = "上傳中...";
-            dbRef.push({ image: tempCroppedFishData, size: sizeVal, timestamp: Date.now() })
-            .then(() => { closeModal(); document.getElementById('finishUploadBtn').innerText = "✅ 確定放入水族箱"; })
-            .catch(async err => { await customAlert("上傳失敗"); document.getElementById('finishUploadBtn').innerText = "✅ 確定放入水族箱"; });
-        }
-
-        // --- 背景直接上傳 (Step 1 Confirm) ---
-        async function finishUploadBg() {
-             if(rectData.w===0) { await customAlert("請先調整框框！"); return; }
-             let bgBase64 = generateCroppedImage(true);
-             if(currentClassId) {
-                document.getElementById('directBgUploadBtn').innerText = "更換中...";
-                firebase.database().ref('school_aquarium_bg/' + currentClassId).set({ image: bgBase64, timestamp: Date.now() })
-                .then(async () => { closeModal(); document.getElementById('directBgUploadBtn').innerText = "確定更換背景"; await customAlert("背景更換成功！"); })
-                .catch(async err => { await customAlert("上傳失敗"); document.getElementById('directBgUploadBtn').innerText = "確定更換背景"; });
-             }
-        }
-
-        // --- Canvas 繪圖與互動 ---
-        function resizeCanvas() {
-            let wrapper = document.getElementById('canvas-wrapper');
-            let scale = Math.min((wrapper.clientWidth-20)/rawImg.width, (wrapper.clientHeight-20)/rawImg.height);
-            canvas.width = rawImg.width * scale; canvas.height = rawImg.height * scale; draw();
-        }
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(rawImg, 0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            if (mode === 'rect') {
-                if (currentUploadType === 'bg' && rectData.w === 0) initBgCropBox();
-                if (rectData.w !== 0) {
-                    ctx.clearRect(rectData.x, rectData.y, rectData.w, rectData.h);
-                    ctx.drawImage(rawImg, rectData.x/(canvas.width/rawImg.width), rectData.y/(canvas.height/rawImg.height), rectData.w/(canvas.width/rawImg.width), rectData.h/(canvas.height/rawImg.height), rectData.x, rectData.y, rectData.w, rectData.h);
-                    ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 3; ctx.strokeRect(rectData.x, rectData.y, rectData.w, rectData.h);
-                }
-            } else if (mode === 'poly' && polyPoints.length > 0) {
-                ctx.save(); ctx.beginPath(); ctx.moveTo(polyPoints[0].x, polyPoints[0].y);
-                for(let i=1; i<polyPoints.length; i++) ctx.lineTo(polyPoints[i].x, polyPoints[i].y);
-                if(polyPoints.length > 2) ctx.closePath(); ctx.clip(); ctx.clearRect(0,0,canvas.width,canvas.height);
-                ctx.drawImage(rawImg, 0, 0, canvas.width, canvas.height); ctx.restore();
-                ctx.beginPath(); ctx.strokeStyle = '#ffff00'; ctx.lineWidth = 2; ctx.moveTo(polyPoints[0].x, polyPoints[0].y);
-                for(let i=1; i<polyPoints.length; i++) ctx.lineTo(polyPoints[i].x, polyPoints[i].y);
-                if(polyPoints.length > 2) ctx.lineTo(polyPoints[0].x, polyPoints[0].y); ctx.stroke();
-                ctx.fillStyle = 'red'; polyPoints.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill(); });
-            }
-        }
-        function initBgCropBox() {
-            let screenRatio = window.innerWidth / window.innerHeight;
-            let imgRatio = canvas.width / canvas.height;
-            let w, h;
-            if (imgRatio > screenRatio) { h = canvas.height * 0.9; w = h * screenRatio; } 
-            else { w = canvas.width * 0.9; h = w / screenRatio; }
-            rectData = { x: (canvas.width - w) / 2, y: (canvas.height - h) / 2, w: w, h: h };
-        }
-        function getPos(e) { let r = canvas.getBoundingClientRect(); let cx = e.touches?e.touches[0].clientX:e.clientX; let cy = e.touches?e.touches[0].clientY:e.clientY; return {x:cx-r.left, y:cy-r.top}; }
-        function start(e) { if(e.type==='touchstart')e.preventDefault(); let p=getPos(e); if(mode==='rect'){isDragging=true;startPos=p; if(currentUploadType!=='bg') rectData={x:p.x,y:p.y,w:0,h:0}; else startBgDrag(p); }else{polyPoints.push(p);draw();} }
-        let bgDragOffset = {x:0, y:0};
-        function startBgDrag(p) { if (p.x >= rectData.x && p.x <= rectData.x + rectData.w && p.y >= rectData.y && p.y <= rectData.y + rectData.h) { bgDragOffset.x = p.x - rectData.x; bgDragOffset.y = p.y - rectData.y; } else { rectData.x = p.x - rectData.w/2; rectData.y = p.y - rectData.h/2; bgDragOffset.x = rectData.w/2; bgDragOffset.y = rectData.h/2; } }
-        function move(e) { if(!isDragging||mode!=='rect')return; if(e.type==='touchmove')e.preventDefault(); let p=getPos(e); if (currentUploadType === 'bg') { rectData.x = p.x - bgDragOffset.x; rectData.y = p.y - bgDragOffset.y; } else { rectData.w=p.x-startPos.x; rectData.h=p.y-startPos.y; } draw(); }
-        function end() { isDragging=false; }
-        canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', end);
-        canvas.addEventListener('touchstart', start, {passive:false}); canvas.addEventListener('touchmove', move, {passive:false}); canvas.addEventListener('touchend', end);
-        function setMode(m) { mode=m; resetCrop(); draw(); }
-        function resetCrop() { rectData={x:0,y:0,w:0,h:0}; polyPoints=[]; draw(); }
-
-        const aquarium = document.getElementById('aquarium'); const fishes = [];
-        function removeFishFromScreen(key) { const index = fishes.findIndex(f => f.dbKey === key); if(index !== -1) { if(fishes[index].container) fishes[index].container.remove(); fishes.splice(index, 1); } }
+        // Fish 類
         class Fish {
             constructor(data, dbKey) {
-                this.dbKey = dbKey; this.imageSrc = data.image; this.size = data.size || (Math.random() * 80 + 50); this.authorInfo = data.author ? `${data.fromClass} ${data.author}` : "";
-                this.container = document.createElement('div'); this.container.className = 'fish-container'; this.container.style.opacity = '0';
-                if(this.authorInfo) { this.container.classList.add('has-author'); let label = document.createElement('div'); label.className = 'fish-name-label'; label.innerText = this.authorInfo; this.container.appendChild(label); }
-                this.element = document.createElement('img'); this.element.src = this.imageSrc; this.element.className = 'fish-img'; this.element.style.width = this.size + 'px';
+                this.dbKey = dbKey;
+                this.imageSrc = data.image;
+                this.size = data.size || (Math.random() * 80 + 50);
+                this.authorInfo = data.author ? `${data.fromClass} ${data.author}` : "";
+
+                this.container = document.createElement('div');
+                this.container.className = 'fish-container';
+                this.container.style.opacity = '0';
+
+                if (this.authorInfo) {
+                    this.container.classList.add('has-author');
+                    let label = document.createElement('div');
+                    label.className = 'fish-name-label';
+                    label.innerText = this.authorInfo;
+                    this.container.appendChild(label);
+                }
+
+                this.element = document.createElement('img');
+                this.element.src = this.imageSrc;
+                this.element.className = 'fish-img';
+                this.element.style.width = this.size + 'px';
                 this.container.appendChild(this.element);
-                let labelHeight = this.authorInfo ? 25 : 0; this.x = Math.random() * (window.innerWidth - this.size); this.y = Math.random() * (window.innerHeight - this.size - labelHeight) + labelHeight;
-                this.vx = (Math.random() - 0.5) * 3; this.vy = (Math.random() - 0.5) * 1.5; if(Math.abs(this.vx) < 0.5) this.vx = 1;
+
+                let labelHeight = this.authorInfo ? 25 : 0;
+                this.x = Math.random() * (window.innerWidth - this.size);
+                this.y = Math.random() * (window.innerHeight - this.size - labelHeight) + labelHeight;
+                this.vx = (Math.random() - 0.5) * 3;
+                this.vy = (Math.random() - 0.5) * 1.5;
+                if (Math.abs(this.vx) < 0.5) this.vx = 1;
+
                 this.container.onclick = async (e) => {
-                    e.stopPropagation(); 
-                    if(isDeleteMode) { if(await customConfirm("確定要刪除嗎？")) firebase.database().ref('school_aquarium_fish/' + currentClassId + '/' + this.dbKey).remove(); return; }
-                    if(isSubmitMode) {
-                        let authorName = await customPrompt("請輸入作者學生姓名：");
-                        if(authorName) { firebase.database().ref('school_aquarium_fish/Lobby').push({ image: this.imageSrc, size: this.size, author: authorName, fromClass: currentClassId, timestamp: Date.now() }).then(async () => { await customAlert(`已發布到大廳！`); toggleSubmitMode(); }); }
+                    e.stopPropagation();
+
+                    if (app.state.isDeleteMode) {
+                        if (await app.customConfirm("確定要刪除嗎？")) {
+                            firebase.database().ref('school_aquarium_fish/' + app.state.currentClassId + '/' + this.dbKey).remove();
+                        }
                         return;
                     }
-                    if(this.authorInfo) await customAlert("✨ 優秀作品：\n" + this.authorInfo);
+
+                    if (app.state.isSubmitMode) {
+                        let authorName = await app.customPrompt("請輸入作者學生姓名：");
+                        if (authorName) {
+                            firebase.database().ref('school_aquarium_fish/Lobby').push({
+                                image: this.imageSrc,
+                                size: this.size,
+                                author: authorName,
+                                fromClass: app.state.currentClassId,
+                                timestamp: Date.now()
+                            }).then(async () => {
+                                await app.customAlert(`已發布到大廳！`);
+                                app.toggleSubmitMode();
+                            });
+                        }
+                        return;
+                    }
+
+                    if (this.authorInfo) await app.customAlert("✨ 優秀作品：\n" + this.authorInfo);
                 };
-                aquarium.appendChild(this.container); setTimeout(() => { this.container.style.opacity = '1'; }, 100);
+
+                document.getElementById('aquarium').appendChild(this.container);
+                setTimeout(() => {
+                    this.container.style.opacity = '1';
+                }, 100);
             }
+
             updateStyle() {
-                this.container.classList.remove('deletable', 'submittable'); this.container.style.cursor = this.authorInfo ? 'help' : 'default';
-                if(isDeleteMode) { this.container.classList.add('deletable'); this.container.style.cursor = 'pointer'; } 
-                else if (isSubmitMode) { this.container.classList.add('submittable'); this.container.style.cursor = 'pointer'; }
+                this.container.classList.remove('deletable', 'submittable');
+                this.container.style.cursor = this.authorInfo ? 'help' : 'default';
+
+                if (app.state.isDeleteMode) {
+                    this.container.classList.add('deletable');
+                    this.container.style.cursor = 'pointer';
+                } else if (app.state.isSubmitMode) {
+                    this.container.classList.add('submittable');
+                    this.container.style.cursor = 'pointer';
+                }
             }
+
             update() {
-                let labelOffset = this.authorInfo ? 25 : 0; this.x += this.vx; this.y += this.vy;
+                let labelOffset = this.authorInfo ? 25 : 0;
+                this.x += this.vx;
+                this.y += this.vy;
+
                 if (this.x <= 0 || this.x + this.size >= window.innerWidth) this.vx *= -1;
                 if (this.y <= labelOffset || this.y + this.size >= window.innerHeight) this.vy *= -1;
+
                 this.container.style.transform = `translate(${this.x}px, ${this.y}px)`;
-                let scaleX = this.vx > 0 ? -1 : 1; this.element.style.transform = `scaleX(${scaleX})`;
+                let scaleX = this.vx > 0 ? -1 : 1;
+                this.element.style.transform = `scaleX(${scaleX})`;
             }
         }
-        function createFish(data, key) { const f = new Fish(data, key); f.updateStyle(); fishes.push(f); }
-        function animate() { fishes.forEach(fish => fish.update()); requestAnimationFrame(animate); }
-        animate();
+
+        // 初始化 Canvas 相關變數
+        app.canvas = document.getElementById('editor');
+        app.ctx = app.canvas.getContext('2d');
+        app.rawImg = new Image();
+        app.mode = 'rect';
+        app.isDragging = false;
+        app.startPos = { x: 0, y: 0 };
+        app.rectData = { x: 0, y: 0, w: 0, h: 0 };
+        app.polyPoints = [];
+        app.bgDragOffset = { x: 0, y: 0 };
+
+        // 設置 Canvas 事件監聽器
+        app.canvas.addEventListener('mousedown', (e) => app.start(e));
+        app.canvas.addEventListener('mousemove', (e) => app.move(e));
+        app.canvas.addEventListener('mouseup', () => app.end());
+        app.canvas.addEventListener('touchstart', (e) => app.start(e), { passive: false });
+        app.canvas.addEventListener('touchmove', (e) => app.move(e), { passive: false });
+        app.canvas.addEventListener('touchend', () => app.end());
+
+        // 啟動應用
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+            app.animate();
+            
+            // 添加震動動畫
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                    20%, 40%, 60%, 80% { transform: translateX(5px); }
+                }
+            `;
+            document.head.appendChild(style);
+        });
     </script>
 </body>
 </html>
