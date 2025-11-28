@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>校園數位共創水族箱 (介面優化版)</title>
+    <title>校園數位共創水族箱 (完整功能版)</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -11,170 +11,156 @@
         /* --- 基礎設定 --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #222; font-family: "Microsoft JhengHei", sans-serif; }
         
-        /* 水族箱容器 */
         #aquarium {
             width: 100%; height: 100%;
-            position: relative;
-            overflow: hidden;
+            position: relative; overflow: hidden;
             background: linear-gradient(180deg,#4facfe 0%, #00f2fe 100%);
-            background-size: cover;
-            background-position: center;
+            background-size: cover; background-position: center;
             transition: background 0.5s ease;
         }
 
-        /* 背景圖片層 */
         #bg-image-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             object-fit: cover; opacity: 0; transition: opacity 0.5s;
             z-index: 0; pointer-events: none;
         }
 
-        /* 海底沙地 */
         #sand {
             position: absolute; bottom: 0; width: 100%; height: 80px;
             background: #e6d99c; border-top: 5px solid #d4c585; 
             z-index: 2; pointer-events: none;
         }
 
-        /* --- 1. 左上角智慧導覽區 --- */
+        /* --- 1. 頂部班級列表 (新功能) --- */
+        #class-list-bar {
+            position: absolute; top: 0; left: 0; width: 100%; height: 50px;
+            background: rgba(0,0,0,0.5); z-index: 140;
+            display: flex; align-items: center; 
+            padding-left: 180px; /* 留位置給左邊的輸入框 */
+            padding-right: 10px;
+            overflow-x: auto; /* 允許橫向捲動 */
+            white-space: nowrap; gap: 8px;
+        }
+        /* 隱藏捲軸但保留功能 */
+        #class-list-bar::-webkit-scrollbar { display: none; }
+
+        .class-tag {
+            background: rgba(255, 255, 255, 0.2);
+            color: white; padding: 5px 12px; border-radius: 15px;
+            font-size: 14px; cursor: pointer; border: 1px solid rgba(255,255,255,0.3);
+            transition: 0.2s;
+        }
+        .class-tag:hover { background: rgba(255, 255, 255, 0.5); }
+        .class-tag.active { background: #007bff; border-color: #007bff; }
+
+
+        /* --- 2. 左上角操作區 --- */
         #top-nav {
-            position: absolute; top: 15px; left: 15px; z-index: 150;
+            position: absolute; top: 5px; left: 10px; z-index: 150;
             display: flex; flex-direction: column; gap: 10px;
             align-items: flex-start;
         }
 
-        /* 班級輸入框區域 (初始顯示) */
         #class-input-area {
             background: rgba(0,0,0,0.7);
-            padding: 10px; border-radius: 8px;
+            padding: 8px; border-radius: 8px;
             display: flex; gap: 5px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: opacity 0.3s, transform 0.3s;
         }
 
-        /* 班級顯示標籤 (輸入後顯示) */
         #class-display-label {
-            display: none; /* 預設隱藏 */
-            background: rgba(0, 123, 255, 0.9);
+            display: none; background: rgba(0, 123, 255, 0.9);
             color: white; padding: 8px 15px; border-radius: 20px;
             font-size: 16px; font-weight: bold;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            cursor: pointer;
-            align-items: center; gap: 8px;
+            cursor: pointer; align-items: center; gap: 8px;
         }
-        #class-display-label:hover { background: rgba(0, 123, 255, 1); }
-
+        
         input.class-input {
-            padding: 8px; border-radius: 4px; border: none; width: 100px; text-align: center; outline: none;
+            padding: 5px; border-radius: 4px; border: none; width: 90px; text-align: center; outline: none;
         }
 
-        /* --- 選單切換按鈕 --- */
         #menu-toggle-btn {
             background: rgba(255, 255, 255, 0.9);
             border: none; border-radius: 50%; width: 40px; height: 40px;
             font-size: 20px; cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             display: flex; align-items: center; justify-content: center;
-            transition: transform 0.2s;
         }
-        #menu-toggle-btn:active { transform: scale(0.9); }
 
-        /* --- 2. 左側操作面板 (容器) --- */
+        /* --- 左側面板 --- */
         #controls-container {
-            margin-top: 10px;
-            display: flex; flex-direction: column; gap: 10px;
-            transform-origin: top left;
-            transition: transform 0.3s ease, opacity 0.3s ease;
+            margin-top: 5px; display: flex; flex-direction: column; gap: 10px;
+            transform-origin: top left; transition: transform 0.3s, opacity 0.3s;
         }
-        
-        /* 隱藏時的狀態 */
-        .controls-hidden {
-            transform: scale(0);
-            opacity: 0;
-            pointer-events: none;
-            height: 0; margin: 0; /* 避免佔位 */
-        }
+        .controls-hidden { transform: scale(0); opacity: 0; pointer-events: none; height: 0; }
 
         .panel {
-            background: rgba(255,255,255,0.95); 
-            padding: 12px; border-radius: 12px;
+            background: rgba(255,255,255,0.95); padding: 12px; border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             display: flex; flex-direction: column; gap: 8px; width: 180px;
         }
 
         h3 { margin: 0 0 5px 0; font-size: 16px; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
         
-        .btn {
-            border: none; padding: 8px; border-radius: 6px; 
-            font-size: 14px; cursor: pointer; color: white;
-            text-align: center; font-weight: bold; transition: 0.2s;
-        }
-        .btn:active { transform: scale(0.96); }
+        .btn { border: none; padding: 8px; border-radius: 6px; font-size: 14px; cursor: pointer; color: white; text-align: center; font-weight: bold; }
         .btn-blue { background: #007bff; }
         .btn-orange { background: #fd7e14; }
         .btn-red { background: #dc3545; }
         .btn-gray { background: #6c757d; }
         .btn-purple { background: #6f42c1; }
+        .btn-green { background: #28a745; }
 
-        /* 刪除模式按鈕特效 */
-        .delete-mode-active {
-            background: #dc3545 !important;
-            animation: pulse 1s infinite;
-        }
+        .delete-mode-active { background: #dc3545 !important; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
 
         input[type="file"] { display: none; }
 
-        /* 魚的樣式 */
-        .fish { 
-            position: absolute; z-index: 10; 
-            cursor: pointer; 
-            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
-            transition: opacity 0.5s, filter 0.2s; 
-        }
-        .fish.deletable:hover {
-            filter: drop-shadow(0 0 10px red); 
-            transform: scale(1.1);
-        }
+        .fish { position: absolute; z-index: 10; cursor: pointer; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3)); transition: opacity 0.5s, filter 0.2s; }
+        .fish.deletable:hover { filter: drop-shadow(0 0 10px red); transform: scale(1.1); }
 
-        /* Modal */
+        /* --- 裁剪與大小調整視窗 --- */
         #modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 200;
             display: none; flex-direction: column;
         }
         #toolbar {
-            height: 70px; background: #333; display: flex; align-items: center; justify-content: center; gap: 10px;
-            padding: 0 10px; color: white;
+            height: 90px; background: #333; /* 加高一點放滑桿 */
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+            padding: 10px; color: white;
         }
-        #canvas-wrapper {
-            flex: 1; display: flex; align-items: center; justify-content: center;
-            overflow: hidden; position: relative; touch-action: none;
-        }
+        .toolbar-row { display: flex; gap: 10px; align-items: center; }
+
+        #canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; touch-action: none; }
         canvas { border: 2px solid #666; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         .radio-group { display: flex; gap: 10px; background: #555; padding: 5px 15px; border-radius: 20px; }
         .radio-group label { cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 14px; color: white;}
         
+        /* 滑桿樣式 */
+        input[type=range] { width: 120px; accent-color: #007bff; }
+
         #loading-msg {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             color: white; font-size: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
             z-index: 5; pointer-events: none;
         }
-
     </style>
 </head>
 <body>
 
     <div id="aquarium">
+        <div id="class-list-bar">
+            </div>
+
         <div id="top-nav">
             <div id="class-input-area">
                 <input type="text" id="classInput" class="class-input" placeholder="輸入班號">
-                <button class="btn btn-blue" style="padding: 8px 12px;" onclick="switchClass()">進入</button>
+                <button class="btn btn-blue" style="padding: 5px 10px;" onclick="switchClass()">進入</button>
             </div>
 
             <div id="class-display-label" onclick="showClassInput()">
                 <span id="current-class-text">📍 501 班</span>
-                <span style="font-size:12px; opacity:0.8;">(點擊切換)</span>
             </div>
 
             <button id="menu-toggle-btn" onclick="toggleControls()" title="顯示/隱藏選單">☰</button>
@@ -208,13 +194,22 @@
 
     <div id="modal">
         <div id="toolbar">
-            <div class="radio-group">
-                <label><input type="radio" name="mode" value="rect" checked onclick="setMode('rect')"> 🟦 方形</label>
-                <label><input type="radio" name="mode" value="poly" onclick="setMode('poly')"> ✂️ 描邊</label>
+            <div class="toolbar-row">
+                <div class="radio-group">
+                    <label><input type="radio" name="mode" value="rect" checked onclick="setMode('rect')"> 🟦 方形</label>
+                    <label><input type="radio" name="mode" value="poly" onclick="setMode('poly')"> ✂️ 描邊</label>
+                </div>
+                <div style="display:flex; align-items:center; gap:5px; background:#555; padding:5px 10px; border-radius:20px;">
+                    <span style="font-size:12px;">小</span>
+                    <input type="range" id="sizeSlider" min="30" max="250" value="100">
+                    <span style="font-size:12px;">大</span>
+                </div>
             </div>
-            <button class="btn btn-green" id="finishBtn" onclick="finishCrop()">上傳雲端</button>
-            <button class="btn btn-red" onclick="resetCrop()">重置</button>
-            <button class="btn btn-gray" onclick="closeModal()">取消</button>
+            <div class="toolbar-row">
+                <button class="btn btn-green" id="finishBtn" onclick="finishCrop()">上傳雲端</button>
+                <button class="btn btn-red" onclick="resetCrop()">重置</button>
+                <button class="btn btn-gray" onclick="closeModal()">取消</button>
+            </div>
         </div>
         <div id="canvas-wrapper">
             <canvas id="editor"></canvas>
@@ -238,43 +233,73 @@
         };
 
         let dbRef = null;
+        let rootRef = null; // 用來監聽所有班級
         let currentClassId = "Lobby"; 
         let isDeleteMode = false;
         let isControlsVisible = true;
 
         try {
             firebase.initializeApp(firebaseConfig);
-            // 預設進入大廳，但我們這次先不載入，等待用戶輸入或顯示輸入框
-            // initClassRoom("Lobby"); 
-            // 為了方便，預設顯示大廳，輸入框保持開啟
+            rootRef = firebase.database().ref('school_aquarium_fish');
+            
+            // 監聽並自動生成班級列表
+            listenToClassList();
+            
+            // 預設載入大廳
             initClassRoom("Lobby");
         } catch (e) {
             console.error(e);
         }
 
         // ==========================================
-        //  介面控制邏輯 (新功能)
+        //  自動生成班級列表 (新功能)
         // ==========================================
-        
+        function listenToClassList() {
+            rootRef.on('value', (snapshot) => {
+                const listBar = document.getElementById('class-list-bar');
+                listBar.innerHTML = ""; // 清空舊的
+                
+                snapshot.forEach((childSnapshot) => {
+                    const className = childSnapshot.key;
+                    // 建立按鈕
+                    const tag = document.createElement('div');
+                    tag.className = 'class-tag';
+                    if(className === currentClassId) tag.classList.add('active');
+                    tag.innerText = className;
+                    tag.onclick = () => {
+                        document.getElementById('classInput').value = className; // 填入輸入框
+                        switchClass(); // 執行切換
+                    };
+                    listBar.appendChild(tag);
+                });
+            });
+        }
+
+        // ==========================================
+        //  介面控制邏輯
+        // ==========================================
         function switchClass() {
-            const inputVal = document.getElementById('classInput').value.trim();
+            let inputVal = document.getElementById('classInput').value.trim();
             if(!inputVal) return alert("請輸入班級名稱！");
             
             const safeClassId = inputVal.replace(/[.#$/[\]]/g, "_");
             initClassRoom(safeClassId);
             
-            // UI 切換：隱藏輸入框，顯示標籤
+            // UI 切換
             document.getElementById('class-input-area').style.display = 'none';
-            const label = document.getElementById('class-display-label');
-            label.style.display = 'flex';
+            document.getElementById('class-display-label').style.display = 'flex';
             document.getElementById('current-class-text').innerText = `📍 ${safeClassId} 班`;
-            
-            // 清空輸入框
             document.getElementById('classInput').value = '';
+            
+            // 更新上方列表的高亮狀態 (手動觸發一次重新渲染太麻煩，靠 Firebase 監聽更新即可，這裡只做簡單處理)
+            document.querySelectorAll('.class-tag').forEach(t => t.classList.remove('active'));
+            // 嘗試找到對應按鈕加亮 (如果有的話)
+            Array.from(document.querySelectorAll('.class-tag')).forEach(t => {
+                 if(t.innerText === safeClassId) t.classList.add('active');
+            });
         }
 
         function showClassInput() {
-            // 點擊標籤後，切換回輸入框模式
             document.getElementById('class-display-label').style.display = 'none';
             document.getElementById('class-input-area').style.display = 'flex';
         }
@@ -290,7 +315,7 @@
         }
 
         // ==========================================
-        //  Firebase 邏輯
+        //  Firebase 邏輯 (讀取魚)
         // ==========================================
         function initClassRoom(classId) {
             if (dbRef) dbRef.off(); 
@@ -309,7 +334,8 @@
                 const data = snapshot.val();
                 const key = snapshot.key;
                 if(data && data.image) {
-                    createFish(data.image, key); 
+                    // 傳入資料庫存的 size，如果沒有則預設 100
+                    createFish(data.image, key, data.size || 100); 
                 }
                 document.getElementById('loading-msg').style.display = 'none';
             });
@@ -388,7 +414,13 @@
             }
             input.value = '';
         }
-        function openModal() { document.getElementById('modal').style.display = 'flex'; resetCrop(); resizeCanvas(); }
+        function openModal() { 
+            document.getElementById('modal').style.display = 'flex'; 
+            resetCrop(); 
+            resizeCanvas(); 
+            // 預設滑桿為 100
+            document.getElementById('sizeSlider').value = 100;
+        }
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
         
         function resizeCanvas() {
@@ -431,6 +463,10 @@
 
         function finishCrop() {
             let tempCanvas = document.createElement('canvas'); let tCtx = tempCanvas.getContext('2d'); let r = rawImg.width/canvas.width;
+            
+            // 讀取滑桿數值
+            let sizeVal = parseInt(document.getElementById('sizeSlider').value);
+
             if(mode==='rect'){
                 if(rectData.w===0) return alert("請先框選");
                 let fx=rectData.w>0?rectData.x:rectData.x+rectData.w, fy=rectData.h>0?rectData.y:rectData.y+rectData.h;
@@ -449,21 +485,28 @@
             
             if(dbRef) {
                 document.getElementById('finishBtn').innerText = "上傳中...";
-                dbRef.push({ image: base64, timestamp: Date.now() })
-                    .then(() => { closeModal(); document.getElementById('finishBtn').innerText = "上傳雲端"; })
-                    .catch(err => { alert("上傳失敗"); document.getElementById('finishBtn').innerText = "上傳雲端"; });
+                // 將 image 和 size 一起存入資料庫
+                dbRef.push({ 
+                    image: base64, 
+                    size: sizeVal,
+                    timestamp: Date.now() 
+                })
+                .then(() => { closeModal(); document.getElementById('finishBtn').innerText = "上傳雲端"; })
+                .catch(err => { alert("上傳失敗"); document.getElementById('finishBtn').innerText = "上傳雲端"; });
             }
         }
 
         const aquarium = document.getElementById('aquarium');
         const fishes = [];
         class Fish {
-            constructor(imgSrc, dbKey) {
+            constructor(imgSrc, dbKey, size) {
                 this.dbKey = dbKey; 
                 this.element = document.createElement('img');
                 this.element.src = imgSrc;
                 this.element.className = 'fish';
-                this.size = Math.random() * 80 + 50; 
+                
+                // 使用資料庫存的大小，如果沒有則用隨機 (舊資料兼容)
+                this.size = size || (Math.random() * 80 + 50);
                 this.element.style.width = this.size + 'px';
                 this.element.style.opacity = '0';
                 
@@ -503,8 +546,8 @@
             }
         }
 
-        function createFish(src, key) {
-            const f = new Fish(src, key);
+        function createFish(src, key, size) {
+            const f = new Fish(src, key, size);
             f.updateStyle();
             fishes.push(f);
         }
